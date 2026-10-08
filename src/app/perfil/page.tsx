@@ -8,6 +8,7 @@ import { ProfileForm } from "@/features/profile/profile-form";
 import { formatMoney } from "@/shared/lib/money";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Perfil" };
 
@@ -85,6 +86,16 @@ export default async function ProfilePage() {
       <div className="rounded-[32px] border border-white/8 bg-pitch p-6">
         <ProfileForm user={session} />
       </div>
+      <Link
+        href="/seguridad"
+        className="flex items-center justify-between rounded-[32px] border border-white/8 bg-pitch p-6 text-sm hover:border-lime/40"
+      >
+        <span>
+          <span className="block text-bone">Seguridad de la cuenta</span>
+          <span className="text-mist">Verificación en dos pasos con app de autenticación</span>
+        </span>
+        <span className="text-lime">Configurar →</span>
+      </Link>
     </div>
   );
 }

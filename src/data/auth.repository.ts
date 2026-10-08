@@ -12,6 +12,48 @@ interface AuthEnvelope {
   sessionId?: unknown;
   roles?: unknown;
   organizations?: unknown;
+  twoFactorRequired?: unknown;
+  twoFactorSetupRequired?: unknown;
+  challengeToken?: unknown;
+}
+
+export type LoginOutcome =
+  | { kind: "session"; session: SessionUser }
+  | { kind: "two_factor_challenge"; challengeToken: string };
+
+export interface TwoFactorStatus {
+  enabled: boolean;
+  setupRequired: boolean;
+  recoveryCodesRemaining: number;
+}
+
+export interface TwoFactorSetup {
+  secret: string;
+  qrCodeDataUrl: string;
+}
+
+/**
+ * Propósito: Convierte una respuesta con sesión del backend en la sesión del BFF.
+ */
+export function toSessionUser(payload: AuthEnvelope): SessionUser {
+  if (typeof payload.sessionId !== "string" || !payload.user) {
+    /**
+     * Output:
+     * @throws AppError — Respuesta sin sesión
+     */
+    throw new AppError("UPSTREAM", "El inicio de sesión no devolvió sesión", 502);
+  }
+  const twoFactor = (payload.user as { twoFactor?: { setupRequired?: unknown } }).twoFactor;
+  /**
+   * Output:
+   * @returns SessionUser — Usuario + sessionId + roles efectivos
+   */
+  return {
+    ...toPublicUser(payload.user as object, toUserRoles(payload.roles)),
+    sessionId: payload.sessionId,
+    twoFactorSetupRequired:
+      payload.twoFactorSetupRequired === true || twoFactor?.setupRequired === true,
+  };
 }
 
 /**
@@ -41,9 +83,9 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
 }
 
 /**
- * Propósito: Autentica y usa roles/tenants del login. Evita un segundo round-trip.
+ * Propósito: Autentica. Devuelve la sesión o, si la cuenta tiene 2FA, el desafío a completar.
  */
-export async function loginUser(input: LoginInput): Promise<SessionUser> {
+export async function loginUser(input: LoginInput): Promise<LoginOutcome> {
   const payload = await requestBackend<AuthEnvelope>({
     path: "/auth/login",
     method: "POST",
@@ -53,23 +95,152 @@ export async function loginUser(input: LoginInput): Promise<SessionUser> {
     },
   });
 
-  if (typeof payload.sessionId !== "string" || !payload.user) {
+  if (payload.twoFactorRequired === true) {
+    if (typeof payload.challengeToken !== "string") {
+      /**
+       * Output:
+       * @throws AppError — Desafío incompleto
+       */
+      throw new AppError("UPSTREAM", "El inicio de sesión no devolvió el desafío", 502);
+    }
     /**
      * Output:
-     * @throws AppError — Login incompleto
+     * @returns LoginOutcome — Falta el código de 2FA
      */
-    throw new AppError("UPSTREAM", "El inicio de sesión no devolvió sesión", 502);
+    return { kind: "two_factor_challenge", challengeToken: payload.challengeToken };
   }
-
-  const roles = toUserRoles(payload.roles);
   /**
    * Output:
-   * @returns SessionUser — Usuario + sessionId + roles
+   * @returns LoginOutcome — Sesión abierta
+   */
+  return { kind: "session", session: toSessionUser(payload) };
+}
+
+/**
+ * Propósito: Segundo paso del login con código TOTP o de respaldo.
+ */
+export async function completeTwoFactorLogin(
+  challengeToken: string,
+  code: string,
+): Promise<SessionUser> {
+  const payload = await requestBackend<AuthEnvelope>({
+    path: "/auth/login/2fa",
+    method: "POST",
+    body: { challengeToken, code },
+  });
+  /**
+   * Output:
+   * @returns SessionUser — Sesión abierta
+   */
+  return toSessionUser(payload);
+}
+
+/**
+ * Propósito: Pide el enlace de restablecimiento (respuesta neutra exista o no la cuenta).
+ */
+export async function requestPasswordReset(email: string): Promise<string> {
+  const payload = await requestBackend<AuthEnvelope>({
+    path: "/auth/password/forgot",
+    method: "POST",
+    body: { email },
+  });
+  /**
+   * Output:
+   * @returns string — Mensaje neutro para mostrar
+   */
+  return payload.message ?? "Si el correo está registrado, te enviamos un enlace.";
+}
+
+/**
+ * Propósito: Fija una contraseña nueva con el token del enlace.
+ */
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await requestBackend<AuthEnvelope>({
+    path: "/auth/password/reset",
+    method: "POST",
+    body: { token, password },
+  });
+  /**
+   * Output:
+   * Side effects — Contraseña cambiada y sesiones cerradas en el backend
+   */
+}
+
+/**
+ * Propósito: Estado del 2FA del usuario en sesión.
+ */
+export async function getTwoFactorStatus(): Promise<TwoFactorStatus> {
+  const payload = await requestAuthedBackend<{ twoFactor?: Partial<TwoFactorStatus> }>({
+    path: "/auth/2fa/status",
+  });
+  /**
+   * Output:
+   * @returns TwoFactorStatus — Estado normalizado
    */
   return {
-    ...toPublicUser(payload.user as object, roles),
-    sessionId: payload.sessionId,
+    enabled: payload.twoFactor?.enabled === true,
+    setupRequired: payload.twoFactor?.setupRequired === true,
+    recoveryCodesRemaining: Number(payload.twoFactor?.recoveryCodesRemaining ?? 0),
   };
+}
+
+/**
+ * Propósito: Genera secreto + QR para configurar la app autenticadora.
+ */
+export async function beginTwoFactorSetup(): Promise<TwoFactorSetup> {
+  const payload = await requestAuthedBackend<{ setup?: Partial<TwoFactorSetup> }>({
+    path: "/auth/2fa/setup",
+    method: "POST",
+  });
+  const { secret, qrCodeDataUrl } = payload.setup ?? {};
+  if (typeof secret !== "string" || typeof qrCodeDataUrl !== "string" || !qrCodeDataUrl.startsWith("data:image/png;base64,")) {
+    /**
+     * Output:
+     * @throws AppError — Respuesta incompleta
+     */
+    throw new AppError("UPSTREAM", "No se pudo generar el código QR", 502);
+  }
+  /**
+   * Output:
+   * @returns TwoFactorSetup — Secreto y QR
+   */
+  return { secret, qrCodeDataUrl };
+}
+
+/**
+ * Propósito: Confirma el 2FA. Devuelve los códigos de respaldo y los roles ya completos.
+ */
+export async function confirmTwoFactorSetup(
+  code: string,
+): Promise<{ recoveryCodes: string[]; roles: SessionUser["roles"] }> {
+  const payload = await requestAuthedBackend<{ recoveryCodes?: unknown; roles?: unknown }>({
+    path: "/auth/2fa/confirm",
+    method: "POST",
+    body: { code },
+  });
+  const recoveryCodes = Array.isArray(payload.recoveryCodes)
+    ? payload.recoveryCodes.filter((recoveryCode): recoveryCode is string => typeof recoveryCode === "string")
+    : [];
+  /**
+   * Output:
+   * @returns object — Códigos de respaldo y roles efectivos
+   */
+  return { recoveryCodes, roles: toUserRoles(payload.roles) };
+}
+
+/**
+ * Propósito: Desactiva el 2FA (el backend cierra todas las sesiones).
+ */
+export async function disableTwoFactor(code: string): Promise<void> {
+  await requestAuthedBackend<AuthEnvelope>({
+    path: "/auth/2fa/disable",
+    method: "POST",
+    body: { code },
+  });
+  /**
+   * Output:
+   * Side effects — 2FA desactivado
+   */
 }
 
 /**

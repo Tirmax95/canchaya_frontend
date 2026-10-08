@@ -16,10 +16,12 @@ export function FieldForm({
   field,
   establishments,
   ownerId,
+  defaultEstablishmentId,
 }: {
   field?: Field;
   establishments: Establishment[];
   ownerId: number;
+  defaultEstablishmentId?: number;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function FieldForm({
         <select
           name="id_establishment"
           required
-          defaultValue={field?.establishmentId}
+          defaultValue={field?.establishmentId ?? defaultEstablishmentId}
           className="w-full rounded-2xl border border-white/10 bg-ink/40 px-4 py-3 text-bone outline-none focus:border-lime/70"
         >
           <option value="">Selecciona una sede</option>

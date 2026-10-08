@@ -4,6 +4,8 @@ export const BOOKING_OPEN_HOUR = 6;
 export const BOOKING_CLOSE_HOUR = 23;
 export const MIN_BOOKING_HOURS = 1;
 export const MAX_BOOKING_HOURS = 3;
+/** America/Bogota no usa DST: offset civil fijo para todos los cálculos de día. */
+export const APP_UTC_OFFSET = "-05:00";
 
 export interface TimeSlot {
   startIso: string;
@@ -122,7 +124,7 @@ function zonedLocalDate(
    * Output:
    * @returns Date — Instante UTC de esa hora en Bogotá
    */
-  return new Date(`${dayIsoDate}T${padHour(hour)}:00:00-05:00`);
+  return new Date(`${dayIsoDate}T${padHour(hour)}:00:00${APP_UTC_OFFSET}`);
 }
 
 /**

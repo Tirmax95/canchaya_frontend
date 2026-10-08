@@ -1,6 +1,8 @@
 export type AppErrorCode =
   | "VALIDATION"
   | "UNAUTHORIZED"
+  /** El backend revocó la sesión: la cookie local ya se borró. */
+  | "SESSION_EXPIRED"
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"

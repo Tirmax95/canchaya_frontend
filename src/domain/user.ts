@@ -25,6 +25,10 @@ export interface PublicUser {
 
 export interface SessionUser extends PublicUser {
   sessionId: string;
+  /** Super admin sin 2FA: debe activarlo antes de usar el panel de plataforma. */
+  twoFactorSetupRequired?: boolean;
+  /** Sesión "ver como tenant" abierta por el super admin: solo lectura. */
+  isReadOnly?: boolean;
 }
 
 export const STAFF_ROLES: readonly UserRole[] = [

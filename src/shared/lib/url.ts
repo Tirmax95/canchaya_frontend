@@ -21,3 +21,23 @@ export function isSafeHttpUrl(value: string | undefined | null): boolean {
     return false;
   }
 }
+
+/**
+ * Propósito: Acepta solo rutas internas para redirecciones post-login (evita open redirect
+ * con `//evil.com` o `https://...`).
+ */
+export function toSafeInternalPath(value: string | string[] | undefined | null): string | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\")) {
+    /**
+     * Output:
+     * @returns null — Vacío o no interno
+     */
+    return null;
+  }
+  /**
+   * Output:
+   * @returns string — Ruta interna
+   */
+  return candidate;
+}

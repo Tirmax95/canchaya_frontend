@@ -1,3 +1,4 @@
+import { requireAdminModule } from "@/application/admin-access";
 import { getStaffReservationViews } from "@/application/booking";
 import { requireSession } from "@/core/auth/session";
 import { ReservationList } from "@/features/booking/reservation-list";
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: "Admin · Reservas" };
  * Propósito: Inbox de reservas para confirmar o cancelar.
  */
 export default async function AdminReservationsPage() {
+  await requireAdminModule("reservations");
   const [session, reservations] = await Promise.all([
     requireSession(),
     getStaffReservationViews(),

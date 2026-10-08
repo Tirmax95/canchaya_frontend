@@ -50,6 +50,115 @@ body {
   background-size: 48px 48px;
 }
 
+/* Escena isométrica del mapa de canchas (CSS 3D ortográfico, sin perspectiva). */
+@property --iso-spin {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: -40deg;
+}
+
+.iso-scene {
+  --iso-tilt: 58deg;
+  transform-style: preserve-3d;
+  transition:
+    --iso-spin 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.iso-3d {
+  transform-style: preserve-3d;
+}
+
+/* Elementos "de pie" (jugadores, reflectores, pines): anulan la rotación de la cámara. */
+.iso-upright {
+  position: absolute;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  transform: translateZ(var(--iso-lift, 0px)) rotateZ(calc(var(--iso-spin) * -1))
+    rotateX(calc(var(--iso-tilt) * -1));
+  pointer-events: none;
+}
+
+.iso-turf {
+  background:
+    radial-gradient(ellipse at center, rgba(244, 239, 228, 0.08), transparent 70%),
+    repeating-linear-gradient(90deg, #1f5a35 0 24px, #1a4f2f 24px 48px);
+}
+
+.iso-turf-dim {
+  background: repeating-linear-gradient(90deg, #163824 0 24px, #13311f 24px 48px);
+}
+
+@keyframes iso-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes iso-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(var(--drift-x, 6px), var(--drift-y, -4px));
+  }
+}
+
+@keyframes iso-pin-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes iso-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-iso-bob {
+  animation: iso-bob 1.4s ease-in-out infinite;
+}
+
+.animate-iso-drift {
+  animation: iso-drift 5s ease-in-out infinite;
+}
+
+.animate-iso-pin {
+  animation: iso-pin-bounce 1.8s ease-in-out infinite;
+}
+
+.animate-iso-glow {
+  animation: iso-glow 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iso-scene {
+    transition: none;
+  }
+
+  .animate-iso-bob,
+  .animate-iso-drift,
+  .animate-iso-pin,
+  .animate-iso-glow {
+    animation: none;
+  }
+}
+
 ::selection {
   background: var(--lime);
   color: var(--ink);

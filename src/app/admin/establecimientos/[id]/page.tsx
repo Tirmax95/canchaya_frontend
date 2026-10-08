@@ -1,3 +1,4 @@
+import { requireAdminModule } from "@/application/admin-access";
 import { listManagedEstablishments } from "@/data/establishment.repository";
 import { EstablishmentForm } from "@/features/admin/establishment-form";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -11,6 +12,7 @@ export default async function EditEstablishmentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAdminModule("establishments");
   const id = Number((await params).id);
   try {
     const establishments = await listManagedEstablishments();

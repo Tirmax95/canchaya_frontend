@@ -1,3 +1,4 @@
+import { requireAdminModule } from "@/application/admin-access";
 import { listManagedEstablishments } from "@/data/establishment.repository";
 import { DeleteButton } from "@/features/admin/delete-button";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: "Admin · Sedes" };
  * Propósito: Tabla de sedes con acciones de edición y borrado.
  */
 export default async function AdminEstablishmentsPage() {
+  await requireAdminModule("establishments");
   const establishments = await listManagedEstablishments();
 
   /**

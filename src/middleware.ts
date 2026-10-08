@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/equipos",
   "/retos",
   "/partidos/nuevo",
+  "/seguridad",
 ];
 const STAFF_PREFIXES = ["/admin"];
 
@@ -61,5 +62,6 @@ export const config = {
     "/equipos/:path*",
     "/retos/:path*",
     "/partidos/nuevo",
+    "/seguridad",
   ],
 };

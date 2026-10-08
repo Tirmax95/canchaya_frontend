@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { AppError } from "@/core/errors/app-error";
 import { MAX_BOOKING_HOURS, MIN_BOOKING_HOURS } from "@/domain/booking";
+import { TENANT_MODULES } from "@/domain/tenant-modules";
+import { MAX_COMMISSION_BPS, MAX_MONTHLY_FEE, STATUS_REASON_MAX_LENGTH } from "@/domain/platform";
+import {
+  getPasswordByteLength,
+  getPasswordPolicyViolation,
+  PASSWORD_MAX_BYTES,
+} from "@/domain/password-policy";
 
 const phoneSchema = z
   .string()
@@ -8,19 +15,81 @@ const phoneSchema = z
   .optional()
   .or(z.literal(""));
 
-export const loginSchema = z.object({
-  email: z.string().trim().email("Ingresa un correo válido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+const emailSchema = z.string().trim().email("Ingresa un correo válido");
+
+/** Login no aplica la política nueva: cuentas antiguas pueden tener contraseñas más cortas. */
+const currentPasswordSchema = z
+  .string()
+  .min(1, "Ingresa tu contraseña")
+  .refine(
+    (password) => getPasswordByteLength(password) <= PASSWORD_MAX_BYTES,
+    `La contraseña no puede superar ${PASSWORD_MAX_BYTES} caracteres`,
+  );
+
+const newPasswordSchema = z.string().superRefine((password, context) => {
+  const violation = getPasswordPolicyViolation(password);
+  if (violation) context.addIssue({ code: "custom", message: violation });
 });
 
-export const registerSchema = loginSchema
-  .extend({
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: currentPasswordSchema,
+});
+
+/** Tokens de un solo uso que llegan por correo (restablecer contraseña, invitaciones). */
+export const OPAQUE_TOKEN_PATTERN = /^[0-9a-f]{64}$/;
+
+const opaqueTokenSchema = z
+  .string({ error: "El enlace no es válido" })
+  .regex(OPAQUE_TOKEN_PATTERN, "El enlace no es válido");
+
+export const forgotPasswordSchema = z.object({ email: emailSchema });
+
+export const resetPasswordSchema = z
+  .object({
+    token: opaqueTokenSchema,
+    password: newPasswordSchema,
+    passwordConfirmation: z.string(),
+  })
+  .refine((value) => value.password === value.passwordConfirmation, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirmation"],
+  });
+
+/** Código TOTP de 6 dígitos o código de respaldo `xxxxx-xxxxx`. */
+export const twoFactorCodeSchema = z.object({
+  code: z
+    .string({ error: "Escribe el código" })
+    .trim()
+    .min(6, "Escribe el código de 6 dígitos")
+    .max(16, "Código inválido"),
+});
+
+export const invitationTokenSchema = z.object({ token: opaqueTokenSchema });
+
+export const inviteMemberSchema = z.object({
+  email: emailSchema.max(160),
+});
+
+export const registerSchema = z
+  .object({
+    email: emailSchema,
+    password: newPasswordSchema,
+    passwordConfirmation: z.string(),
     fullName: z.string().trim().min(2, "Ingresa tu nombre").max(80),
     phone: phoneSchema,
     isVenueOwner: z.boolean().optional(),
     organizationName: z.string().trim().max(80).optional().or(z.literal("")),
   })
   .superRefine((value, context) => {
+    if (value.password !== value.passwordConfirmation) {
+      context.addIssue({
+        code: "custom",
+        message: "Las contraseñas no coinciden",
+        path: ["passwordConfirmation"],
+      });
+    }
+
     if (value.isVenueOwner && !value.organizationName?.trim()) {
       context.addIssue({
         code: "custom",
@@ -98,10 +167,63 @@ export const createReservationSchema = z
   });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type EstablishmentInput = z.infer<typeof establishmentSchema>;
 export type FieldInput = z.infer<typeof fieldSchema>;
+
+const statusReasonSchema = z
+  .string({ error: "Escribe un motivo" })
+  .trim()
+  .min(3, "Escribe un motivo (mínimo 3 caracteres)")
+  .max(STATUS_REASON_MAX_LENGTH);
+
+export const tenantActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("suspend"), reason: statusReasonSchema }),
+  z.object({ action: z.literal("reactivate") }),
+  z.object({ action: z.literal("approve") }),
+  z.object({
+    action: z.literal("billing"),
+    monthlyFee: z.coerce.number().int().min(0).max(MAX_MONTHLY_FEE),
+    commissionBps: z.coerce.number().int().min(0).max(MAX_COMMISSION_BPS),
+    billingEmail: z.string().trim().email("Correo de cobro inválido").max(160).optional().or(z.literal("")),
+  }),
+]);
+
+export const userActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("block"), reason: statusReasonSchema }),
+  z.object({ action: z.literal("unblock") }),
+  z.object({ action: z.literal("reset_2fa") }),
+]);
+
+const billingPeriodSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Periodo inválido (YYYY-MM)");
+
+export const generateInvoicesSchema = z.object({
+  period: billingPeriodSchema,
+  organizationIds: z.array(z.number().int().positive()).max(500).optional(),
+  notes: z.string().trim().max(500).optional(),
+});
+
+export const invoiceActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("pay"),
+    paymentReference: z
+      .string({ error: "Indica la referencia del pago" })
+      .trim()
+      .min(2, "Indica la referencia del pago")
+      .max(120),
+    paidAt: isoDateSchema.optional(),
+  }),
+  z.object({ action: z.literal("void"), reason: statusReasonSchema }),
+]);
+
+export const tenantModulesSchema = z.object({
+  enabledModules: z
+    .array(z.enum(TENANT_MODULES))
+    .max(TENANT_MODULES.length)
+    .refine((modules) => new Set(modules).size === modules.length, "Módulos duplicados"),
+});
 export const createPickupMatchSchema = z.object({
   sport: z.literal("futbol").default("futbol"),
   venueText: z.string().trim().min(3).max(200),

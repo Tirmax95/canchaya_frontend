@@ -1,3 +1,4 @@
+import { requireAdminModule } from "@/application/admin-access";
 import { requireSession } from "@/core/auth/session";
 import { listManagedEstablishments } from "@/data/establishment.repository";
 import { listManagedFields } from "@/data/field.repository";
@@ -13,6 +14,7 @@ export default async function EditFieldPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAdminModule("fields");
   const fieldId = Number((await params).id);
   try {
     const [session, fields, establishments] = await Promise.all([

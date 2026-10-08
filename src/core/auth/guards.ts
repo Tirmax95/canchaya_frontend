@@ -1,5 +1,5 @@
 import { AppError } from "@/core/errors/app-error";
-import { isStaff } from "@/core/auth/roles";
+import { isAdmin, isStaff } from "@/core/auth/roles";
 import { requireSession } from "@/core/auth/session";
 import type { SessionUser } from "@/domain/user";
 
@@ -23,6 +23,25 @@ export async function requireStaff(): Promise<SessionUser> {
   /**
    * Output:
    * @returns SessionUser — Staff autenticado
+   */
+  return session;
+}
+
+/**
+ * Propósito: Exige admin de plataforma (super admin) para las operaciones globales de la plataforma.
+ */
+export async function requireSuperAdmin(): Promise<SessionUser> {
+  const session = await requireSession();
+  if (!isAdmin(session)) {
+    /**
+     * Output:
+     * @throws AppError — 403 si no es admin de plataforma
+     */
+    throw new AppError("FORBIDDEN", "Solo el super admin puede realizar esta acción", 403);
+  }
+  /**
+   * Output:
+   * @returns SessionUser — Super admin autenticado
    */
   return session;
 }
