@@ -21,7 +21,7 @@ export default async function LoginPage() {
   return (
     <AuthShell
       title="Entra al partido"
-      subtitle="Usa tu correo para ver reservas y confirmar horarios."
+      subtitle="Jugadores globales, dueños aislados por organización. Demo: cubo@canchaya.test, dany@canchaya.test o jugador@canchaya.test / CanchaYa123."
     >
       <LoginForm />
     </AuthShell>

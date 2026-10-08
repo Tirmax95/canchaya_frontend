@@ -4,7 +4,7 @@ export interface Field {
   numberField: string;
   description: string;
   basePricePerHour: number;
-  ownerId: number;
+  ownerId?: number;
   imageFields: string;
   createdAt?: string;
   updatedAt?: string;

@@ -1,4 +1,4 @@
-import { requestBackend } from "@/core/http/backend-client";
+import { requestAuthedBackend, requestBackend } from "@/core/http/backend-client";
 import { toField } from "@/data/mappers";
 import type { Field } from "@/domain/field";
 import type { FieldInput } from "@/domain/schemas";
@@ -40,10 +40,25 @@ export async function getFieldById(fieldId: number): Promise<Field> {
 }
 
 /**
+ * Propósito: Lista canchas del tenant autenticado.
+ */
+export async function listManagedFields(): Promise<Field[]> {
+  const payload = await requestAuthedBackend<FieldEnvelope>({
+    path: "/field/mine",
+  });
+  const items = Array.isArray(payload.fields) ? payload.fields : [];
+  /**
+   * Output:
+   * @returns Field[] — Canchas del dueño o todas si es admin
+   */
+  return items.map((item) => toField(item as object));
+}
+
+/**
  * Propósito: Crea una cancha con el contrato del backend.
  */
 export async function createField(input: FieldInput): Promise<Field> {
-  const payload = await requestBackend<FieldEnvelope>({
+  const payload = await requestAuthedBackend<FieldEnvelope>({
     path: "/field/create",
     method: "POST",
     body: input,
@@ -63,7 +78,7 @@ export async function updateField(
   fieldId: number,
   input: FieldInput,
 ): Promise<Field> {
-  const payload = await requestBackend<FieldEnvelope>({
+  const payload = await requestAuthedBackend<FieldEnvelope>({
     path: `/field/update/${fieldId}`,
     method: "PUT",
     body: input,
@@ -80,7 +95,7 @@ export async function updateField(
  * Propósito: Elimina una cancha.
  */
 export async function deleteField(fieldId: number): Promise<void> {
-  await requestBackend({
+  await requestAuthedBackend({
     path: `/field/delete/${fieldId}`,
     method: "DELETE",
   });

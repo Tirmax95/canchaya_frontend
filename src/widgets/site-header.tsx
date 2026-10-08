@@ -1,6 +1,6 @@
 "use client";
 
-import { isStaff } from "@/core/auth/roles";
+import { isAdmin, isStaff } from "@/core/auth/roles";
 import { Button } from "@/shared/ui/button";
 import { useSession } from "@/widgets/session-provider";
 import Link from "next/link";
@@ -8,8 +8,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const links = [
+  { href: "/partidos", label: "Partidos" },
+  { href: "/retos", label: "Retos" },
+  { href: "/equipos", label: "Equipos" },
   { href: "/establecimientos", label: "Sedes" },
-  { href: "/canchas", label: "Canchas" },
   { href: "/reservas", label: "Reservas" },
 ];
 
@@ -78,7 +80,7 @@ export function SiteHeader() {
                   : "text-mist hover:text-bone"
               }`}
             >
-              Admin
+              {isAdmin(user) ? "Admin" : "Mi sede"}
             </Link>
           ) : null}
         </nav>

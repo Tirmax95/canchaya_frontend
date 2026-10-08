@@ -4,6 +4,7 @@ export type AppErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"
+  | "RATE_LIMITED"
   | "UPSTREAM"
   | "UNKNOWN";
 

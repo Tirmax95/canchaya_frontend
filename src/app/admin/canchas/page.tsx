@@ -1,4 +1,4 @@
-import { getFieldCatalog } from "@/application/catalog";
+import { getManagedFieldCatalog } from "@/application/catalog";
 import { DeleteButton } from "@/features/admin/delete-button";
 import { formatMoney } from "@/shared/lib/money";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Admin · Canchas" };
  * Propósito: Inventario de canchas con acciones staff.
  */
 export default async function AdminFieldsPage() {
-  const fields = await getFieldCatalog();
+  const fields = await getManagedFieldCatalog();
 
   return (
     <div className="space-y-8">

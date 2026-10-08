@@ -1,4 +1,4 @@
-import { listEstablishments } from "@/data/establishment.repository";
+import { listManagedEstablishments } from "@/data/establishment.repository";
 import { DeleteButton } from "@/features/admin/delete-button";
 import { PageHeader } from "@/shared/ui/page-header";
 import Link from "next/link";
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Admin · Sedes" };
  * Propósito: Tabla de sedes con acciones de edición y borrado.
  */
 export default async function AdminEstablishmentsPage() {
-  const establishments = await listEstablishments();
+  const establishments = await listManagedEstablishments();
 
   /**
    * Output:
@@ -35,6 +35,7 @@ export default async function AdminEstablishmentsPage() {
           <thead className="bg-white/4 text-mist">
             <tr>
               <th className="px-4 py-3 font-medium">Nombre</th>
+              <th className="px-4 py-3 font-medium">Organización</th>
               <th className="px-4 py-3 font-medium">Dirección</th>
               <th className="px-4 py-3 font-medium">Acciones</th>
             </tr>
@@ -46,6 +47,9 @@ export default async function AdminEstablishmentsPage() {
                 className="border-t border-white/8"
               >
                 <td className="px-4 py-3 text-bone">{establishment.name}</td>
+                <td className="px-4 py-3 text-mist">
+                  {establishment.organizationName ?? "—"}
+                </td>
                 <td className="px-4 py-3 text-mist">{establishment.address}</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">

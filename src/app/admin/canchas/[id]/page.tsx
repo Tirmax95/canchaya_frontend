@@ -1,6 +1,6 @@
 import { requireSession } from "@/core/auth/session";
-import { listEstablishments } from "@/data/establishment.repository";
-import { getFieldById } from "@/data/field.repository";
+import { listManagedEstablishments } from "@/data/establishment.repository";
+import { listManagedFields } from "@/data/field.repository";
 import { FieldForm } from "@/features/admin/field-form";
 import { PageHeader } from "@/shared/ui/page-header";
 import { notFound } from "next/navigation";
@@ -15,11 +15,15 @@ export default async function EditFieldPage({
 }) {
   const fieldId = Number((await params).id);
   try {
-    const [session, field, establishments] = await Promise.all([
+    const [session, fields, establishments] = await Promise.all([
       requireSession(),
-      getFieldById(fieldId),
-      listEstablishments(),
+      listManagedFields(),
+      listManagedEstablishments(),
     ]);
+    const field = fields.find((item) => item.id === fieldId);
+    if (!field) {
+      notFound();
+    }
     return (
       <div className="mx-auto max-w-xl space-y-8">
         <PageHeader kicker="Canchas" title="Editar cancha" />

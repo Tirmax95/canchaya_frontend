@@ -4,6 +4,8 @@ export interface Establishment {
   address: string;
   phone: string;
   imageEstablishment: string;
+  organizationId?: number | null;
+  organizationName?: string;
   createdAt?: string;
   updatedAt?: string;
 }

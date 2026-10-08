@@ -7,12 +7,20 @@ export const USER_ROLES = [
 
 export type UserRole = (typeof USER_ROLES)[number];
 
+export interface PublicOrganization {
+  id: number;
+  name: string;
+  slug: string;
+  role: "owner" | "manager";
+}
+
 export interface PublicUser {
   id: number;
   email: string;
   fullName?: string;
   phone?: string;
   roles: UserRole[];
+  organizations?: PublicOrganization[];
 }
 
 export interface SessionUser extends PublicUser {

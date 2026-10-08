@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { AppError } from "@/core/errors/app-error";
-import { USER_ROLES } from "@/domain/user";
 import { MAX_BOOKING_HOURS, MIN_BOOKING_HOURS } from "@/domain/booking";
 
 const phoneSchema = z
@@ -14,11 +13,22 @@ export const loginSchema = z.object({
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
 
-export const registerSchema = loginSchema.extend({
-  fullName: z.string().trim().min(2, "Ingresa tu nombre").max(80),
-  phone: phoneSchema,
-  defaultRole: z.enum(USER_ROLES).optional(),
-});
+export const registerSchema = loginSchema
+  .extend({
+    fullName: z.string().trim().min(2, "Ingresa tu nombre").max(80),
+    phone: phoneSchema,
+    isVenueOwner: z.boolean().optional(),
+    organizationName: z.string().trim().max(80).optional().or(z.literal("")),
+  })
+  .superRefine((value, context) => {
+    if (value.isVenueOwner && !value.organizationName?.trim()) {
+      context.addIssue({
+        code: "custom",
+        message: "Indica el nombre de tu sede o club",
+        path: ["organizationName"],
+      });
+    }
+  });
 
 export const profileSchema = z.object({
   email: z.string().trim().email("Ingresa un correo válido"),
@@ -42,7 +52,7 @@ export const fieldSchema = z.object({
   number_field: z.string().trim().min(1, "El número de cancha es obligatorio"),
   description: z.string().trim().max(400).optional().or(z.literal("")),
   base_price_per_hour: z.coerce.number().positive("El precio debe ser mayor a 0"),
-  owner_id: z.coerce.number().int().positive(),
+  owner_id: z.coerce.number().int().positive().optional(),
   image_fields: z.string().trim().url("La imagen debe ser una URL http(s)").max(500),
 });
 
@@ -92,7 +102,38 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type EstablishmentInput = z.infer<typeof establishmentSchema>;
 export type FieldInput = z.infer<typeof fieldSchema>;
+export const createPickupMatchSchema = z.object({
+  sport: z.literal("futbol").default("futbol"),
+  venueText: z.string().trim().min(3).max(200),
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
+  startsAt: isoDateSchema,
+  totalSlots: z.coerce.number().int().min(2).max(30),
+  pricePerSlot: z.coerce.number().int().min(0).max(5_000_000),
+  skillLevel: z.enum(["novato", "amateur", "competitivo", "elite"]),
+});
+
+export const createTeamSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+});
+
+export const createRetoSchema = z.object({
+  challengedTeamId: z.coerce.number().int().positive(),
+  proposedStartsAt: isoDateSchema,
+  venueText: z.string().trim().min(3).max(200),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+});
+
+export const holdSlotSchema = z.object({
+  matchId: z.coerce.number().int().positive(),
+});
+
 export type CreateReservationInput = z.infer<typeof createReservationSchema>;
+export type CreatePickupMatchInput = z.infer<typeof createPickupMatchSchema>;
+export type CreateTeamInput = z.infer<typeof createTeamSchema>;
+export type CreateRetoInput = z.infer<typeof createRetoSchema>;
+export type HoldSlotInput = z.infer<typeof holdSlotSchema>;
 
 /**
  * Propósito: Parsea input externo con Zod y lo convierte en AppError de validación.

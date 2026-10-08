@@ -1,4 +1,4 @@
-import { getFieldCatalog } from "@/application/catalog";
+import { getVisibleFieldCatalog } from "@/application/catalog";
 import type { FieldCatalogItem } from "@/domain/field";
 import { FieldCard } from "@/features/catalog/field-card";
 import { Alert } from "@/shared/ui/alert";
@@ -14,7 +14,7 @@ export default async function NewReservationPage() {
   let fields: FieldCatalogItem[] = [];
   let error: string | null = null;
   try {
-    fields = await getFieldCatalog();
+    fields = await getVisibleFieldCatalog();
   } catch {
     error = "No pudimos cargar las canchas. ¿Está el API en línea?";
   }

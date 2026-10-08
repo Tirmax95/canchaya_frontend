@@ -1,4 +1,7 @@
-import { getEstablishmentCatalog, getFieldCatalog } from "@/application/catalog";
+import {
+  getManagedEstablishmentCatalog,
+  getManagedFieldCatalog,
+} from "@/application/catalog";
 import { getStaffReservationViews } from "@/application/booking";
 import { PageHeader } from "@/shared/ui/page-header";
 import Link from "next/link";
@@ -11,8 +14,8 @@ export const metadata: Metadata = { title: "Admin" };
  */
 export default async function AdminHomePage() {
   const [establishments, fields, reservations] = await Promise.all([
-    getEstablishmentCatalog(),
-    getFieldCatalog(),
+    getManagedEstablishmentCatalog(),
+    getManagedFieldCatalog(),
     getStaffReservationViews(),
   ]);
   const pending = reservations.filter((item) => item.status === "pending").length;
@@ -32,8 +35,8 @@ export default async function AdminHomePage() {
     <div className="space-y-8">
       <PageHeader
         kicker="Administración"
-        title="El complejo en un vistazo"
-        description="Publica sedes, canchas y confirma reservas pendientes."
+        title="Tu sede en un vistazo"
+        description="Solo ves y administras las sedes de tu organización. Los jugadores siguen siendo globales."
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(([label, value, href]) => (

@@ -1,4 +1,4 @@
-import { requestBackend } from "@/core/http/backend-client";
+import { requestAuthedBackend, requestBackend } from "@/core/http/backend-client";
 import { AppError } from "@/core/errors/app-error";
 import { toPublicUser, toUserRoles } from "@/data/mappers";
 import type { LoginInput, ProfileInput, RegisterInput } from "@/domain/schemas";
@@ -11,10 +11,11 @@ interface AuthEnvelope {
   user?: unknown;
   sessionId?: unknown;
   roles?: unknown;
+  organizations?: unknown;
 }
 
 /**
- * Propósito: Registra un usuario y no persiste passwordHash.
+ * Propósito: Registra jugador o dueño. No persiste passwordHash.
  */
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const payload = await requestBackend<AuthEnvelope>({
@@ -25,7 +26,10 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
       password: input.password,
       fullName: input.fullName,
       phone: input.phone || undefined,
-      defaultRole: input.defaultRole ?? "client",
+      defaultRole: input.isVenueOwner ? "establishment_owner" : "client",
+      organizationName: input.isVenueOwner
+        ? input.organizationName?.trim()
+        : undefined,
     },
   });
 
@@ -37,7 +41,7 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
 }
 
 /**
- * Propósito: Autentica, carga roles en paralelo conceptual (1 extra call) y arma la sesión.
+ * Propósito: Autentica y usa roles/tenants del login. Evita un segundo round-trip.
  */
 export async function loginUser(input: LoginInput): Promise<SessionUser> {
   const payload = await requestBackend<AuthEnvelope>({
@@ -57,19 +61,13 @@ export async function loginUser(input: LoginInput): Promise<SessionUser> {
     throw new AppError("UPSTREAM", "El inicio de sesión no devolvió sesión", 502);
   }
 
-  const user = toPublicUser(payload.user as object);
-  const rolesPayload = await requestBackend<AuthEnvelope>({
-    path: `/auth/user/${user.id}/roles`,
-    method: "GET",
-  });
-
+  const roles = toUserRoles(payload.roles);
   /**
    * Output:
    * @returns SessionUser — Usuario + sessionId + roles
    */
   return {
-    ...user,
-    roles: toUserRoles(rolesPayload.roles),
+    ...toPublicUser(payload.user as object, roles),
     sessionId: payload.sessionId,
   };
 }
@@ -82,6 +80,7 @@ export async function logoutRemote(sessionId: string): Promise<void> {
     path: "/auth/logout",
     method: "POST",
     body: { sessionId },
+    sessionId,
   });
   /**
    * Output:
@@ -93,7 +92,7 @@ export async function logoutRemote(sessionId: string): Promise<void> {
  * Propósito: Lee el perfil público del usuario autenticado.
  */
 export async function getUserById(userId: number): Promise<PublicUser> {
-  const payload = await requestBackend<AuthEnvelope>({
+  const payload = await requestAuthedBackend<AuthEnvelope>({
     path: `/auth/user/${userId}`,
     method: "GET",
   });
@@ -112,7 +111,7 @@ export async function updateUserProfile(
   userId: number,
   input: ProfileInput,
 ): Promise<PublicUser> {
-  const payload = await requestBackend<AuthEnvelope>({
+  const payload = await requestAuthedBackend<AuthEnvelope>({
     path: `/auth/user/${userId}`,
     method: "PUT",
     body: {

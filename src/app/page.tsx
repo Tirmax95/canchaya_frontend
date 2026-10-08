@@ -28,9 +28,12 @@ export default function HomePage() {
               y llega listo al partido. Sin llamadas, sin WhatsApp eterno.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/establecimientos">Explorar sedes</ButtonLink>
-              <ButtonLink href="/registro" variant="secondary">
-                Crear cuenta gratis
+              <ButtonLink href="/partidos">Ver partidos</ButtonLink>
+              <ButtonLink href="/establecimientos" variant="secondary">
+                Explorar sedes
+              </ButtonLink>
+              <ButtonLink href="/registro" variant="ghost">
+                Crear cuenta
               </ButtonLink>
             </div>
           </div>

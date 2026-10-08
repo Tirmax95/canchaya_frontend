@@ -32,7 +32,10 @@ export function LoginForm() {
         password: String(formData.get("password") ?? ""),
       }),
     });
-    const payload = (await response.json()) as { message?: string };
+    const payload = (await response.json()) as {
+      message?: string;
+      user?: { roles?: string[] };
+    };
 
     if (!response.ok) {
       setError(payload.message ?? "No se pudo iniciar sesión");
@@ -44,7 +47,11 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/reservas");
+    const roles = payload.user?.roles ?? [];
+    const isVenueStaff = roles.some((role) =>
+      ["admin", "establishment_owner", "manager"].includes(role),
+    );
+    router.push(isVenueStaff ? "/admin" : "/reservas");
     router.refresh();
     /**
      * Output:

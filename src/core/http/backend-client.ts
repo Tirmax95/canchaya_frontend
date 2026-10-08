@@ -1,3 +1,4 @@
+import { getSession } from "@/core/auth/session";
 import { getServerEnv } from "@/core/config/env";
 import { AppError } from "@/core/errors/app-error";
 
@@ -10,6 +11,7 @@ export interface BackendRequest {
   method?: HttpMethod;
   body?: unknown;
   signal?: AbortSignal;
+  sessionId?: string;
 }
 
 /**
@@ -36,6 +38,7 @@ export async function requestBackend<T>(request: BackendRequest): Promise<T> {
         ...(request.body !== undefined
           ? { "Content-Type": "application/json" }
           : {}),
+        ...(request.sessionId ? { "X-Session-Id": request.sessionId } : {}),
       },
       body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
       cache: "no-store",
@@ -168,9 +171,11 @@ function mapBackendFailure(status: number, payload: unknown): AppError {
           ? "NOT_FOUND"
           : status === 409
             ? "CONFLICT"
-            : status >= 400 && status < 500
-              ? "VALIDATION"
-              : "UPSTREAM";
+            : status === 429
+              ? "RATE_LIMITED"
+              : status >= 400 && status < 500
+                ? "VALIDATION"
+                : "UPSTREAM";
 
   /**
    * Output:
@@ -202,4 +207,21 @@ function extractPublicMessage(payload: unknown): string {
    * @returns string — Mensaje genérico si el backend no envió uno usable
    */
   return "No se pudo completar la operación";
+}
+
+/**
+ * Propósito: Llama al backend reenviando la sesión httpOnly. Nunca confía en el cliente.
+ */
+export async function requestAuthedBackend<T>(
+  request: Omit<BackendRequest, "sessionId">,
+): Promise<T> {
+  const session = await getSession();
+  /**
+   * Output:
+   * @returns T — Respuesta del backend autenticada
+   */
+  return requestBackend<T>({
+    ...request,
+    sessionId: session?.sessionId,
+  });
 }

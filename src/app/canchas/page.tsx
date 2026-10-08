@@ -1,4 +1,6 @@
-import { getFieldCatalog } from "@/application/catalog";
+import { getVisibleFieldCatalog } from "@/application/catalog";
+import { shouldSeeOnlyOwnedVenues } from "@/core/auth/roles";
+import { getSession } from "@/core/auth/session";
 import type { FieldCatalogItem } from "@/domain/field";
 import { CatalogSearch } from "@/features/catalog/catalog-search";
 import { FieldCard } from "@/features/catalog/field-card";
@@ -18,12 +20,13 @@ export default async function FieldsPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const { q } = await searchParams;
+  const [{ q }, session] = await Promise.all([searchParams, getSession()]);
+  const isOwnerCatalog = shouldSeeOnlyOwnedVenues(session);
   let error: string | null = null;
   let fields: FieldCatalogItem[] = [];
 
   try {
-    const catalog = await getFieldCatalog();
+    const catalog = await getVisibleFieldCatalog();
     const query = q?.trim().toLowerCase() ?? "";
     fields = query
       ? catalog.filter((field) =>
@@ -44,8 +47,12 @@ export default async function FieldsPage({
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-12 sm:px-6">
       <PageHeader
         kicker="Canchas"
-        title="Horarios listos para reservar"
-        description="Compara precios y entra al calendario de cada cancha."
+        title={isOwnerCatalog ? "Tus canchas" : "Horarios listos para reservar"}
+        description={
+          isOwnerCatalog
+            ? "Solo ves las canchas de tu organización."
+            : "Compara precios y entra al calendario de cada cancha."
+        }
       />
       <Suspense>
         <CatalogSearch placeholder="Busca cancha o sede" />

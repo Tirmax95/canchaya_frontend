@@ -4,7 +4,30 @@
  */
 function readOptionalEnv(name: string, fallback: string): string {
   const value = process.env[name];
+  /**
+   * Output:
+   * @returns string — Valor de entorno o fallback local
+   */
   return value && value.trim().length > 0 ? value.trim() : fallback;
+}
+
+/**
+ * Propósito: Obliga un secreto robusto en producción; no permite fallback inseguro.
+ */
+function requireProductionSecret(name: string): string {
+  const value = process.env[name]?.trim() ?? "";
+  if (value.length < 32) {
+    /**
+     * Output:
+     * @throws Error — Falta secreto de producción
+     */
+    throw new Error(`${name} debe tener al menos 32 caracteres en producción`);
+  }
+  /**
+   * Output:
+   * @returns string — Secreto validado
+   */
+  return value;
 }
 
 /**
@@ -13,10 +36,12 @@ function readOptionalEnv(name: string, fallback: string): string {
 export function getServerEnv() {
   const nodeEnv = process.env.NODE_ENV ?? "development";
   const isProduction = nodeEnv === "production";
-  const sessionSecret = readOptionalEnv(
-    "SESSION_SECRET",
-    "canchaya-dev-session-secret-change-me",
-  );
+  const sessionSecret = isProduction
+    ? requireProductionSecret("SESSION_SECRET")
+    : readOptionalEnv(
+        "SESSION_SECRET",
+        "canchaya-dev-session-secret-change-me",
+      );
 
   /**
    * Output:

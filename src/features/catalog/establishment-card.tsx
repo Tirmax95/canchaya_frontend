@@ -27,7 +27,9 @@ export function EstablishmentCard({
         className="h-52 w-full"
       />
       <div className="space-y-2 p-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-lime">Sede</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-lime">
+          {establishment.organizationName || "Sede"}
+        </p>
         <h3 className="font-display text-2xl text-bone group-hover:text-lime">
           {establishment.name}
         </h3>

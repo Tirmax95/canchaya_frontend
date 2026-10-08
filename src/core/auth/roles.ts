@@ -16,6 +16,37 @@ export function hasAnyRole(
 }
 
 /**
+ * Propósito: True si es administrador de plataforma.
+ */
+export function isAdmin(user: Pick<SessionUser, "roles">): boolean {
+  /**
+   * Output:
+   * @returns boolean — True solo para admin global
+   */
+  return hasAnyRole(user, ["admin"]);
+}
+
+/**
+ * Propósito: Dueño o manager ve solo sus sedes. Admin y jugadores ven el marketplace.
+ */
+export function shouldSeeOnlyOwnedVenues(
+  user: Pick<SessionUser, "roles"> | null,
+): boolean {
+  if (!user) {
+    /**
+     * Output:
+     * @returns boolean — Anónimo ve el catálogo público
+     */
+    return false;
+  }
+  /**
+   * Output:
+   * @returns boolean — True si hay que ocultar sedes de otros tenants
+   */
+  return isStaff(user) && !isAdmin(user);
+}
+
+/**
  * Propósito: True para admin, owner o manager. Evita repetir la lista STAFF.
  */
 export function isStaff(user: Pick<SessionUser, "roles">): boolean {

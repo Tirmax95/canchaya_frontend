@@ -1,4 +1,4 @@
-import { getEstablishmentById } from "@/data/establishment.repository";
+import { listManagedEstablishments } from "@/data/establishment.repository";
 import { EstablishmentForm } from "@/features/admin/establishment-form";
 import { PageHeader } from "@/shared/ui/page-header";
 import { notFound } from "next/navigation";
@@ -13,7 +13,13 @@ export default async function EditEstablishmentPage({
 }) {
   const id = Number((await params).id);
   try {
-    const establishment = await getEstablishmentById(id);
+    const establishments = await listManagedEstablishments();
+    const establishment = establishments.find(
+      (item) => item.establishmentId === id,
+    );
+    if (!establishment) {
+      notFound();
+    }
     return (
       <div className="mx-auto max-w-xl space-y-8">
         <PageHeader kicker="Sedes" title="Editar sede" />

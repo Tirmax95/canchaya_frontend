@@ -1,4 +1,8 @@
-import { getFieldCatalog, filterFieldsByEstablishment } from "@/application/catalog";
+import {
+  assertViewerCanSeeEstablishment,
+  filterFieldsByEstablishment,
+  getVisibleFieldCatalog,
+} from "@/application/catalog";
 import { getEstablishmentById } from "@/data/establishment.repository";
 import { FieldCard } from "@/features/catalog/field-card";
 import { isSafeHttpUrl } from "@/shared/lib/url";
@@ -25,7 +29,8 @@ export default async function EstablishmentDetailPage({
   try {
     const [establishment, fieldCatalog] = await Promise.all([
       getEstablishmentById(establishmentId),
-      getFieldCatalog(),
+      getVisibleFieldCatalog(),
+      assertViewerCanSeeEstablishment(establishmentId),
     ]);
     const fields = filterFieldsByEstablishment(fieldCatalog, establishmentId);
 

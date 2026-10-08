@@ -1,4 +1,4 @@
-import { requestBackend } from "@/core/http/backend-client";
+import { requestAuthedBackend, requestBackend } from "@/core/http/backend-client";
 import { toEstablishment } from "@/data/mappers";
 import type { Establishment } from "@/domain/establishment";
 import type { EstablishmentInput } from "@/domain/schemas";
@@ -44,12 +44,29 @@ export async function getEstablishmentById(
 }
 
 /**
+ * Propósito: Lista solo las sedes del tenant autenticado.
+ */
+export async function listManagedEstablishments(): Promise<Establishment[]> {
+  const payload = await requestAuthedBackend<EstablishmentEnvelope>({
+    path: "/establishment/mine",
+  });
+  const items = Array.isArray(payload.establishments)
+    ? payload.establishments
+    : [];
+  /**
+   * Output:
+   * @returns Establishment[] — Sedes del dueño o todas si es admin
+   */
+  return items.map((item) => toEstablishment(item as object));
+}
+
+/**
  * Propósito: Crea una sede con el contrato snake_case del backend.
  */
 export async function createEstablishment(
   input: EstablishmentInput,
 ): Promise<Establishment> {
-  const payload = await requestBackend<EstablishmentEnvelope>({
+  const payload = await requestAuthedBackend<EstablishmentEnvelope>({
     path: "/establishment/create",
     method: "POST",
     body: input,
@@ -69,7 +86,7 @@ export async function updateEstablishment(
   establishmentId: number,
   input: EstablishmentInput,
 ): Promise<Establishment> {
-  const payload = await requestBackend<EstablishmentEnvelope>({
+  const payload = await requestAuthedBackend<EstablishmentEnvelope>({
     path: `/establishment/update/${establishmentId}`,
     method: "PUT",
     body: input,
@@ -88,7 +105,7 @@ export async function updateEstablishment(
 export async function deleteEstablishment(
   establishmentId: number,
 ): Promise<void> {
-  await requestBackend({
+  await requestAuthedBackend({
     path: `/establishment/delete/${establishmentId}`,
     method: "DELETE",
   });

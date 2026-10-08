@@ -1,4 +1,4 @@
-import { requestBackend } from "@/core/http/backend-client";
+import { requestAuthedBackend } from "@/core/http/backend-client";
 import { toReservation } from "@/data/mappers";
 import type { CreateReservationInput } from "@/domain/schemas";
 import type { Reservation } from "@/domain/reservation";
@@ -19,7 +19,7 @@ function mapReservations(payload: unknown): Reservation[] {
  * Propósito: Lista todas las reservas. Pensado para staff, no para clientes.
  */
 export async function listReservations(): Promise<Reservation[]> {
-  const payload = await requestBackend<unknown>({ path: "/reservations" });
+  const payload = await requestAuthedBackend<unknown>({ path: "/reservations" });
   /**
    * Output:
    * @returns Reservation[] — Inventario completo
@@ -33,7 +33,7 @@ export async function listReservations(): Promise<Reservation[]> {
 export async function listReservationsByUser(
   userId: number,
 ): Promise<Reservation[]> {
-  const payload = await requestBackend<unknown>({
+  const payload = await requestAuthedBackend<unknown>({
     path: `/reservations/user/${userId}`,
   });
   /**
@@ -49,7 +49,7 @@ export async function listReservationsByUser(
 export async function listReservationsByField(
   fieldId: number,
 ): Promise<Reservation[]> {
-  const payload = await requestBackend<unknown>({
+  const payload = await requestAuthedBackend<unknown>({
     path: `/reservations/field/${fieldId}`,
   });
   /**
@@ -66,7 +66,7 @@ export async function createReservation(
   userId: number,
   input: CreateReservationInput,
 ): Promise<Reservation> {
-  const payload = await requestBackend<unknown>({
+  const payload = await requestAuthedBackend<unknown>({
     path: "/reservations",
     method: "POST",
     body: {
@@ -91,7 +91,7 @@ export async function createReservation(
 export async function cancelReservation(
   reservationId: number,
 ): Promise<Reservation> {
-  const payload = await requestBackend<unknown>({
+  const payload = await requestAuthedBackend<unknown>({
     path: `/reservations/${reservationId}/cancel`,
     method: "PUT",
   });
@@ -108,7 +108,7 @@ export async function cancelReservation(
 export async function confirmReservation(
   reservationId: number,
 ): Promise<Reservation> {
-  const payload = await requestBackend<unknown>({
+  const payload = await requestAuthedBackend<unknown>({
     path: `/reservations/${reservationId}/confirm`,
     method: "PUT",
   });
@@ -125,7 +125,7 @@ export async function confirmReservation(
 export async function getReservationById(
   reservationId: number,
 ): Promise<Reservation> {
-  const payload = await requestBackend<unknown>({
+  const payload = await requestAuthedBackend<unknown>({
     path: `/reservations/${reservationId}`,
   });
   /**

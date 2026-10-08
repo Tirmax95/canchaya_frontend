@@ -1,4 +1,6 @@
-import { getEstablishmentCatalog } from "@/application/catalog";
+import { getVisibleEstablishmentCatalog } from "@/application/catalog";
+import { shouldSeeOnlyOwnedVenues } from "@/core/auth/roles";
+import { getSession } from "@/core/auth/session";
 import type { EstablishmentCatalogItem } from "@/domain/establishment";
 import { CatalogSearch } from "@/features/catalog/catalog-search";
 import { EstablishmentCard } from "@/features/catalog/establishment-card";
@@ -15,12 +17,13 @@ export default async function EstablishmentsPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const { q } = await searchParams;
+  const [{ q }, session] = await Promise.all([searchParams, getSession()]);
+  const isOwnerCatalog = shouldSeeOnlyOwnedVenues(session);
   let error: string | null = null;
   let establishments: EstablishmentCatalogItem[] = [];
 
   try {
-    const catalog = await getEstablishmentCatalog();
+    const catalog = await getVisibleEstablishmentCatalog();
     const query = q?.trim().toLowerCase() ?? "";
     establishments = query
       ? catalog.filter((item) =>
@@ -39,8 +42,12 @@ export default async function EstablishmentsPage({
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-12 sm:px-6">
       <PageHeader
         kicker="Sedes"
-        title="Elige dónde jugar"
-        description="Complejos con canchas publicadas y precio desde."
+        title={isOwnerCatalog ? "Tus sedes" : "Elige dónde jugar"}
+        description={
+          isOwnerCatalog
+            ? "Solo ves los establecimientos de tu organización."
+            : "Complejos con canchas publicadas y precio desde."
+        }
       />
       <Suspense>
         <CatalogSearch placeholder="Busca por nombre o dirección" />

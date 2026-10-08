@@ -20,6 +20,8 @@ interface RawEstablishment {
   address?: unknown;
   phone?: unknown;
   imageEstablishment?: unknown;
+  organizationId?: unknown;
+  organizationName?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
 }
@@ -66,6 +68,24 @@ function toPositiveInt(value: unknown, fieldName: string): number {
    * @returns number — Entero positivo
    */
   return parsed;
+}
+
+/**
+ * Propósito: Acepta ownerId ausente en el catálogo público (ya no se expone).
+ */
+function toOptionalPositiveInt(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === "") {
+    /**
+     * Output:
+     * @returns undefined — El API omitió el campo a propósito
+     */
+    return undefined;
+  }
+  /**
+   * Output:
+   * @returns number — Entero positivo si vino en el payload
+   */
+  return toPositiveInt(value, "field.ownerId");
 }
 
 /**
@@ -151,6 +171,12 @@ export function toEstablishment(raw: RawEstablishment): Establishment {
     phone: typeof raw.phone === "string" ? raw.phone : "",
     imageEstablishment:
       typeof raw.imageEstablishment === "string" ? raw.imageEstablishment : "",
+    organizationId:
+      raw.organizationId === null || raw.organizationId === undefined
+        ? null
+        : Number(raw.organizationId) || null,
+    organizationName:
+      typeof raw.organizationName === "string" ? raw.organizationName : undefined,
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
   };
@@ -170,7 +196,7 @@ export function toField(raw: RawField): Field {
     numberField: typeof raw.numberField === "string" ? raw.numberField : "Cancha",
     description: typeof raw.description === "string" ? raw.description : "",
     basePricePerHour: Number(raw.basePricePerHour) || 0,
-    ownerId: toPositiveInt(raw.ownerId, "field.ownerId"),
+    ownerId: toOptionalPositiveInt(raw.ownerId),
     imageFields: typeof raw.imageFields === "string" ? raw.imageFields : "",
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
@@ -191,7 +217,10 @@ export function toReservation(raw: RawReservation): Reservation {
    */
   return {
     reservationId: toPositiveInt(raw.reservationId, "reservationId"),
-    userId: toPositiveInt(raw.userId, "reservation.userId"),
+    userId:
+      raw.userId === undefined || raw.userId === null
+        ? 0
+        : toPositiveInt(raw.userId, "reservation.userId"),
     fieldId: toPositiveInt(raw.fieldId, "reservation.fieldId"),
     startTime: toIso(raw.startTime),
     endTime: toIso(raw.endTime),

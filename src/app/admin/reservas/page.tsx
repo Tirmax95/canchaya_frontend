@@ -19,8 +19,8 @@ export default async function AdminReservationsPage() {
     <div className="space-y-8">
       <PageHeader
         kicker="Reservas"
-        title="Todas las reservas"
-        description="Confirma pendientes y cancela choques de horario."
+        title="Reservas de tu sede"
+        description="Solo ves reservas de tus canchas. Confirma pendientes y cancela choques."
       />
       <ReservationList
         reservations={reservations}

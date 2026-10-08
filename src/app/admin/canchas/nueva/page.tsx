@@ -1,5 +1,5 @@
 import { requireSession } from "@/core/auth/session";
-import { listEstablishments } from "@/data/establishment.repository";
+import { listManagedEstablishments } from "@/data/establishment.repository";
 import { FieldForm } from "@/features/admin/field-form";
 import { PageHeader } from "@/shared/ui/page-header";
 
@@ -9,7 +9,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 export default async function NewFieldPage() {
   const [session, establishments] = await Promise.all([
     requireSession(),
-    listEstablishments(),
+    listManagedEstablishments(),
   ]);
 
   return (

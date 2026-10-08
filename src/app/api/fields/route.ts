@@ -1,13 +1,25 @@
+import { shouldSeeOnlyOwnedVenues } from "@/core/auth/roles";
 import { requireStaff } from "@/core/auth/guards";
+import { getSession } from "@/core/auth/session";
 import { handleRoute, readJsonBody } from "@/core/http/route";
-import { createField, listFields } from "@/data/field.repository";
+import {
+  createField,
+  listFields,
+  listManagedFields,
+} from "@/data/field.repository";
 import { fieldSchema, parseSchema } from "@/domain/schemas";
 
+/**
+ * Propósito: Lista canchas visibles. Dueño solo las suyas; el resto el marketplace.
+ */
 export async function GET() {
-  return handleRoute(
-    () => listFields().then((fields) => ({ fields })),
-    "No se pudieron cargar las canchas",
-  );
+  return handleRoute(async () => {
+    const session = await getSession();
+    const fields = shouldSeeOnlyOwnedVenues(session)
+      ? await listManagedFields()
+      : await listFields();
+    return { fields };
+  }, "No se pudieron cargar las canchas");
 }
 
 export async function POST(request: Request) {

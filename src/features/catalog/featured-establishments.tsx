@@ -1,4 +1,4 @@
-import { getEstablishmentCatalog } from "@/application/catalog";
+import { getVisibleEstablishmentCatalog } from "@/application/catalog";
 import { EstablishmentCard } from "@/features/catalog/establishment-card";
 
 /**
@@ -6,7 +6,7 @@ import { EstablishmentCard } from "@/features/catalog/establishment-card";
  */
 export async function FeaturedEstablishments() {
   try {
-    const featured = (await getEstablishmentCatalog()).slice(0, 3);
+    const featured = (await getVisibleEstablishmentCatalog()).slice(0, 3);
     if (featured.length === 0) {
       /**
        * Output:

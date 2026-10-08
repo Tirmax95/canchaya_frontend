@@ -1,4 +1,5 @@
 import { getFieldBookingContext } from "@/application/booking";
+import { assertViewerCanSeeField } from "@/application/catalog";
 import { APP_TIMEZONE } from "@/core/config/env";
 import { getSession } from "@/core/auth/session";
 import { listReservationsByField } from "@/data/reservation.repository";
@@ -32,6 +33,7 @@ export default async function FieldDetailPage({
     const [{ field, establishmentName }, reservations] = await Promise.all([
       getFieldBookingContext(fieldId),
       listReservationsByField(fieldId),
+      assertViewerCanSeeField(fieldId),
     ]);
     const today = toDateInputValue();
     const slots = buildDaySlots(today, reservations, APP_TIMEZONE);
