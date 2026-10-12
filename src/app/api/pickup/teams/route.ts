@@ -9,7 +9,7 @@ import {
   searchTeams,
   searchUserByPhone,
 } from "@/data/pickup.repository";
-import { createTeamSchema, parseSchema } from "@/domain/schemas";
+import { createTeamSchema, parseSchema, teamActionSchema } from "@/domain/schemas";
 
 /**
  * Propósito: Lista equipos, invitaciones o búsqueda. Siempre con sesión.
@@ -23,11 +23,11 @@ export async function GET(request: Request) {
       return { invites: await listTeamInvites() };
     }
     if (view === "search") {
-      return { teams: await searchTeams(url.searchParams.get("q") ?? "") };
+      return { teams: await searchTeams((url.searchParams.get("q") ?? "").trim().slice(0, 80)) };
     }
     if (view === "user") {
       return {
-        user: await searchUserByPhone(url.searchParams.get("phone") ?? ""),
+        user: await searchUserByPhone((url.searchParams.get("phone") ?? "").trim().slice(0, 20)),
       };
     }
     return { teams: await listMyTeams() };
@@ -40,21 +40,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   return handleRoute(async () => {
     await requireSession();
-    const body = (await readJsonBody(request)) as {
-      action?: string;
-      name?: string;
-      teamId?: number;
-      userId?: number;
-      inviteId?: number;
-    };
-    if (body.action === "invite" && body.teamId && body.userId) {
-      return { invite: await inviteToTeam(body.teamId, body.userId) };
-    }
-    if (body.action === "accept" && body.inviteId) {
-      return { invite: await respondInvite(body.inviteId, true) };
-    }
-    if (body.action === "decline" && body.inviteId) {
-      return { invite: await respondInvite(body.inviteId, false) };
+    const body = await readJsonBody(request);
+    if (body && typeof body === "object" && "action" in body) {
+      const action = parseSchema(teamActionSchema, body);
+      if (action.action === "invite") {
+        return { invite: await inviteToTeam(action.teamId, action.userId) };
+      }
+      return { invite: await respondInvite(action.inviteId, action.action === "accept") };
     }
     const input = parseSchema(createTeamSchema, body);
     return { team: await createTeam(input.name) };

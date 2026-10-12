@@ -1,9 +1,9 @@
 "use client";
 
-import type { SessionUser } from "@/domain/user";
+import type { ClientSessionUser } from "@/domain/user";
 import { createContext, useContext } from "react";
 
-const SessionContext = createContext<SessionUser | null>(null);
+const SessionContext = createContext<ClientSessionUser | null>(null);
 
 /**
  * Propósito: Comparte la sesión hidratada desde el server layout.
@@ -12,7 +12,7 @@ export function SessionProvider({
   user,
   children,
 }: {
-  user: SessionUser | null;
+  user: ClientSessionUser | null;
   children: React.ReactNode;
 }) {
   /**
@@ -27,10 +27,10 @@ export function SessionProvider({
 /**
  * Propósito: Lee la sesión en componentes cliente sin refetch.
  */
-export function useSession(): SessionUser | null {
+export function useSession(): ClientSessionUser | null {
   /**
    * Output:
-   * @returns SessionUser | null — Usuario actual o anónimo
+   * @returns ClientSessionUser | null — Usuario actual o anónimo
    */
   return useContext(SessionContext);
 }

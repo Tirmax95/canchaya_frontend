@@ -6,6 +6,14 @@ import { NextResponse } from "next/server";
  * cookie (las páginas no pueden) y lleva al login con el motivo.
  */
 export async function GET(request: Request) {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") {
+    /**
+     * Output:
+     * @returns NextResponse — Un enlace o <img> de otro sitio no puede cerrar la sesión
+     */
+    return NextResponse.redirect(new URL("/", request.url));
+  }
   await clearSession();
   /**
    * Output:

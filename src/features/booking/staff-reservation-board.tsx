@@ -23,7 +23,7 @@ import {
   type ReservationTenantOption,
 } from "@/domain/reservation-inbox";
 import type { ReservationView } from "@/domain/reservation";
-import type { SessionUser } from "@/domain/user";
+import type { ClientSessionUser } from "@/domain/user";
 import { formatHourOfDay, toLocalHourOfDay } from "@/domain/venue-occupancy";
 import { useReservationActions } from "@/features/booking/use-reservation-actions";
 import { cn } from "@/shared/lib/cn";
@@ -66,7 +66,7 @@ export function StaffReservationBoard({
   initialTenantKey = "all",
 }: {
   reservations: ReservationView[];
-  user: SessionUser;
+  user: ClientSessionUser;
   initialTenantKey?: string;
 }) {
   const { t, intlLocale } = useI18n();

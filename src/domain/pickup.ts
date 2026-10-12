@@ -58,7 +58,7 @@ export interface PickupPayment {
   matchId: number;
   provider: string;
   amount: number;
-  status: "pending" | "approved" | "declined" | "refunded";
+  status: "pending" | "approved" | "declined" | "refunded" | "needs_refund";
   checkoutUrl: string;
   createdAt: string;
 }

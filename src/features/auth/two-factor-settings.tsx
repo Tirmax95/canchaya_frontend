@@ -109,8 +109,11 @@ export function TwoFactorSettings({
     event.preventDefault();
     setError(null);
     setIsBusy(true);
-    const code = String(new FormData(event.currentTarget).get("code") ?? "");
-    const { ok, payload } = await postJson("/api/auth/2fa/disable", { code });
+    const formData = new FormData(event.currentTarget);
+    const { ok, payload } = await postJson("/api/auth/2fa/disable", {
+      code: String(formData.get("code") ?? ""),
+      currentPassword: String(formData.get("currentPassword") ?? ""),
+    });
     setIsBusy(false);
     if (!ok) {
       setError(payload.message ?? t("twoFactor.disableFailed"));
@@ -222,6 +225,14 @@ export function TwoFactorSettings({
               name="code"
               autoComplete="one-time-code"
               maxLength={16}
+              required
+            />
+            <TextField
+              label={t("twoFactor.currentPassword")}
+              name="currentPassword"
+              type="password"
+              autoComplete="current-password"
+              maxLength={128}
               required
             />
             <Button type="submit" variant="danger" isLoading={isBusy}>

@@ -1,5 +1,5 @@
 import { getMyReservationViews } from "@/application/booking";
-import { requireSession } from "@/core/auth/session";
+import { requireSession, toClientUser } from "@/core/auth/session";
 import { getTranslator } from "@/core/i18n/get-locale";
 import type { ReservationView } from "@/domain/reservation";
 import { ReservationList } from "@/features/booking/reservation-list";
@@ -51,7 +51,7 @@ export default async function ReservationsPage() {
         }
       />
       {error ? <Alert>{error}</Alert> : (
-        <ReservationList reservations={reservations} user={session} />
+        <ReservationList reservations={reservations} user={toClientUser(session)} />
       )}
     </div>
   );

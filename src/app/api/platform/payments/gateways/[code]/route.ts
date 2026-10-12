@@ -10,7 +10,10 @@ const GATEWAY_CODE_PATTERN = /^[a-z][a-z0-9_]{1,30}$/;
 const updateGatewaySchema = z.object({
   is_enabled: z.boolean().optional(),
   is_test_mode: z.boolean().optional(),
-  public_config: z.record(z.string(), z.string()).optional(),
+  public_config: z
+    .record(z.string().max(40), z.string().max(200))
+    .refine((record) => Object.keys(record).length <= 12, "Demasiados campos")
+    .optional(),
 });
 
 /**

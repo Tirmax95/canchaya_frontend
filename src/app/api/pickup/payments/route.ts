@@ -5,7 +5,7 @@ import {
   checkoutPickup,
   listMyPayments,
 } from "@/data/pickup.repository";
-import { AppError } from "@/core/errors/app-error";
+import { parseSchema, pickupApproveSchema, pickupCheckoutSchema } from "@/domain/schemas";
 
 /**
  * Propósito: Historial de pagos del actor autenticado.
@@ -27,17 +27,12 @@ export async function GET() {
 export async function POST(request: Request) {
   return handleRoute(async () => {
     await requireSession();
-    const body = (await readJsonBody(request)) as {
-      matchId?: number;
-      paymentId?: number;
-      action?: string;
-    };
-    if (body.action === "approve" && body.paymentId) {
-      return { payment: await approveSandboxPayment(Number(body.paymentId)) };
+    const body = await readJsonBody(request);
+    if (body && typeof body === "object" && "action" in body) {
+      const { paymentId } = parseSchema(pickupApproveSchema, body);
+      return { payment: await approveSandboxPayment(paymentId) };
     }
-    if (!body.matchId) {
-      throw new AppError("VALIDATION", "Falta el partido a pagar", 400);
-    }
-    return { payment: await checkoutPickup(Number(body.matchId)) };
+    const { matchId } = parseSchema(pickupCheckoutSchema, body);
+    return { payment: await checkoutPickup(matchId) };
   }, "No se pudo procesar el pago");
 }

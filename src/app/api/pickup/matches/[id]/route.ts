@@ -1,6 +1,6 @@
 import { AppError } from "@/core/errors/app-error";
 import { requireSession } from "@/core/auth/session";
-import { handleRoute } from "@/core/http/route";
+import { handleRoute, parsePositiveIntParam } from "@/core/http/route";
 import {
   cancelPickupMatch,
   confirmPickupMatch,
@@ -18,7 +18,7 @@ export async function GET(
 ) {
   return handleRoute(async () => {
     const { id } = await context.params;
-    return { match: await getPickupMatch(Number(id)) };
+    return { match: await getPickupMatch(parsePositiveIntParam(id, "partido")) };
   }, "No se pudo cargar el partido");
 }
 
@@ -32,7 +32,7 @@ export async function POST(
   return handleRoute(async () => {
     await requireSession();
     const { id } = await context.params;
-    const matchId = Number(id);
+    const matchId = parsePositiveIntParam(id, "partido");
     const url = new URL(request.url);
     const action = url.searchParams.get("action");
     if (action === "publish") {

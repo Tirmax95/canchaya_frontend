@@ -1,4 +1,5 @@
 import { requestAuthedBackend, requestBackend } from "@/core/http/backend-client";
+import { getSession, writeSession } from "@/core/auth/session";
 import { AppError } from "@/core/errors/app-error";
 import { toPublicUser, toUserRoles } from "@/data/mappers";
 import type { LoginInput, ProfileInput, RegisterInput } from "@/domain/schemas";
@@ -231,11 +232,11 @@ export async function confirmTwoFactorSetup(
 /**
  * Propósito: Desactiva el 2FA (el backend cierra todas las sesiones).
  */
-export async function disableTwoFactor(code: string): Promise<void> {
+export async function disableTwoFactor(code: string, currentPassword: string): Promise<void> {
   await requestAuthedBackend<AuthEnvelope>({
     path: "/auth/2fa/disable",
     method: "POST",
-    body: { code },
+    body: { code, currentPassword },
   });
   /**
    * Output:
@@ -255,6 +256,26 @@ export async function logoutRemote(sessionId: string): Promise<void> {
   /**
    * Output:
    * Side effects — Invalida la sesión en el backend
+   */
+}
+
+/**
+ * Propósito: Guarda la nueva sesión y revoca en el backend la que hubiera en la cookie, para
+ * que un login encima de otro no deje un sessionId huérfano y vivo.
+ */
+export async function establishSession(session: SessionUser): Promise<void> {
+  const previous = await getSession();
+  if (previous && previous.sessionId !== session.sessionId) {
+    try {
+      await logoutRemote(previous.sessionId);
+    } catch {
+      // Si el backend ya la había revocado, no hay nada más que hacer.
+    }
+  }
+  await writeSession(session);
+  /**
+   * Output:
+   * Side effects — Cookie de sesión nueva; la anterior queda revocada en el backend
    */
 }
 
@@ -288,6 +309,7 @@ export async function updateUserProfile(
       email: input.email,
       fullName: input.fullName || undefined,
       phone: input.phone || undefined,
+      currentPassword: input.currentPassword || undefined,
     },
   });
 

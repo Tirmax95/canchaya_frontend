@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, Syne } from "next/font/google";
-import { getSession } from "@/core/auth/session";
+import { getSession, toClientUser } from "@/core/auth/session";
 import { getLocale, getTranslator } from "@/core/i18n/get-locale";
 import { I18nProvider } from "@/core/i18n/provider";
 import { QueryProvider } from "@/widgets/query-provider";
@@ -59,7 +59,7 @@ export default async function RootLayout({
       <body className={`${outfit.variable} ${syne.variable} antialiased`}>
         <I18nProvider locale={locale}>
           <QueryProvider>
-            <SessionProvider user={session}>
+            <SessionProvider user={session ? toClientUser(session) : null}>
               <ClientErrorReporter />
               <div className="flex min-h-screen flex-col">
                 <SiteHeader />

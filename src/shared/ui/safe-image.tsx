@@ -24,7 +24,13 @@ export function SafeImage({
     return (
       // next/image exige allowlist de hosts; las URLs de dueños son arbitrarias
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={alt} className={cn("object-cover", className)} />
+      <img
+        src={src}
+        alt={alt}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        className={cn("object-cover", className)}
+      />
     );
   }
 

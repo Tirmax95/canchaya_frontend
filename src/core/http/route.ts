@@ -63,6 +63,14 @@ export function parsePositiveIntParam(raw: string, resourceLabel: string): numbe
  * Propósito: Parsea JSON de Request y falla rápido si el cuerpo es inválido.
  */
 export async function readJsonBody(request: Request): Promise<unknown> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().startsWith("application/json")) {
+    /**
+     * Output:
+     * @throws AppError — 415: un formulario `text/plain` no puede colar JSON (CSRF)
+     */
+    throw new AppError("VALIDATION", "El cuerpo de la petición debe ser JSON", 415);
+  }
   try {
     /**
      * Output:
@@ -86,9 +94,17 @@ export async function handleFileRoute(
   execute: () => Promise<BackendFile>,
   fallbackFileName: string,
   fallbackMessage: string,
+  expectedContentType = "application/pdf",
 ): Promise<NextResponse> {
   try {
     const file = await execute();
+    if (!file.contentType.toLowerCase().startsWith(expectedContentType)) {
+      /**
+       * Output:
+       * @throws AppError — El backend devolvió otro tipo (p. ej. HTML): no se reenvía
+       */
+      throw new AppError("UPSTREAM", fallbackMessage, 502);
+    }
     const fileName = (file.fileName ?? fallbackFileName).replace(/[^a-zA-Z0-9._-]/g, "_");
     /**
      * Output:
@@ -97,8 +113,9 @@ export async function handleFileRoute(
     return new NextResponse(file.content, {
       status: 200,
       headers: {
-        "Content-Type": file.contentType,
+        "Content-Type": expectedContentType,
         "Content-Disposition": `attachment; filename="${fileName}"`,
+        "X-Content-Type-Options": "nosniff",
         "Cache-Control": "private, no-store",
       },
     });

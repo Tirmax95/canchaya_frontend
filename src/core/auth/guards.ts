@@ -4,10 +4,18 @@ import { requireSession } from "@/core/auth/session";
 import type { SessionUser } from "@/domain/user";
 
 /**
- * Propósito: Exige rol de staff antes de mutaciones administrativas.
+ * Propósito: Exige rol de staff antes de mutaciones administrativas. Una sesión "ver como"
+ * (solo lectura) nunca muta, aunque el backend también lo bloquee.
  */
 export async function requireStaff(): Promise<SessionUser> {
   const session = await requireSession();
+  if (session.isReadOnly) {
+    /**
+     * Output:
+     * @throws AppError — 403 en la vista de solo lectura del super admin
+     */
+    throw new AppError("FORBIDDEN", "La vista \"ver como\" es de solo lectura", 403);
+  }
   if (!isStaff(session)) {
     /**
      * Output:

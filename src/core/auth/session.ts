@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerEnv } from "@/core/config/env";
 import { AppError } from "@/core/errors/app-error";
-import type { PublicUser, SessionUser, UserRole } from "@/domain/user";
+import type { ClientSessionUser, SessionUser, UserRole } from "@/domain/user";
 import { USER_ROLES } from "@/domain/user";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -16,17 +16,25 @@ export const SESSION_EXPIRED_PATH = "/api/auth/expired";
 
 interface SessionPayload extends SessionUser {
   issuedAt: number;
+  /** Caducidad absoluta: el servidor la exige aunque el navegador conserve la cookie. */
+  expiresAt: number;
 }
+
+/**
+ * Contexto de firma: una cookie de sesión no sirve como cookie de retorno de "ver como"
+ * (ni al revés), aunque ambas usen el mismo secreto.
+ */
+type SessionCookieKind = "session" | "return";
 
 /**
  * Propósito: Firma un payload de sesión para impedir que el cliente altere roles o userId.
  */
-function signPayload(encodedPayload: string, secret: string): string {
+function signPayload(kind: SessionCookieKind, encodedPayload: string, secret: string): string {
   /**
    * Output:
    * @returns string — HMAC SHA-256 en base64url
    */
-  return createHmac("sha256", secret).update(encodedPayload).digest("base64url");
+  return createHmac("sha256", secret).update(`${kind}|${encodedPayload}`).digest("base64url");
 }
 
 /**
@@ -53,18 +61,19 @@ function isValidSignature(actual: string, expected: string): boolean {
 /**
  * Propósito: Serializa y firma la sesión para guardarla en cookie httpOnly.
  */
-export function encodeSession(user: SessionUser): string {
-  const { sessionSecret, isProduction } = getServerEnv();
-  if (isProduction && sessionSecret.length < 32) {
-    /**
-     * Output:
-     * @throws Error — Producción exige un secreto de sesión robusto
-     */
-    throw new Error(
-      "SESSION_SECRET debe tener al menos 32 caracteres en producción",
-    );
-  }
-  const payload: SessionPayload = { ...user, issuedAt: Date.now() };
+export function encodeSession(
+  user: SessionUser,
+  maxAgeSeconds: number = SESSION_MAX_AGE_SECONDS,
+  kind: SessionCookieKind = "session",
+  expiresAt?: number,
+): string {
+  const { sessionSecret } = getServerEnv();
+  const issuedAt = Date.now();
+  const payload: SessionPayload = {
+    ...toStoredUser(user),
+    issuedAt,
+    expiresAt: Math.min(expiresAt ?? Infinity, issuedAt + maxAgeSeconds * 1000),
+  };
   const encodedPayload = Buffer.from(JSON.stringify(payload), "utf8").toString(
     "base64url",
   );
@@ -73,14 +82,38 @@ export function encodeSession(user: SessionUser): string {
    * Output:
    * @returns string — Cookie value `payload.firma`
    */
-  return `${encodedPayload}.${signPayload(encodedPayload, sessionSecret)}`;
+  return `${encodedPayload}.${signPayload(kind, encodedPayload, sessionSecret)}`;
+}
+
+/**
+ * Propósito: Copia solo los campos conocidos de la sesión (no persiste extras ni `expiresAt`
+ * heredados de otra cookie).
+ */
+function toStoredUser(user: SessionUser): SessionUser {
+  /**
+   * Output:
+   * @returns SessionUser — Campos permitidos
+   */
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    phone: user.phone,
+    roles: user.roles,
+    sessionId: user.sessionId,
+    twoFactorSetupRequired: user.twoFactorSetupRequired === true,
+    isReadOnly: user.isReadOnly === true,
+  };
 }
 
 /**
  * Propósito: Valida firma y forma de la cookie. No confía en el cliente.
  */
-export function decodeSession(rawCookie: string | undefined): SessionUser | null {
-  if (!rawCookie) {
+export function decodeSession(
+  rawCookie: string | undefined,
+  kind: SessionCookieKind = "session",
+): (SessionUser & { expiresAt: number }) | null {
+  if (!rawCookie || rawCookie.length > 8192) {
     /**
      * Output:
      * @returns null — No hay cookie
@@ -88,13 +121,13 @@ export function decodeSession(rawCookie: string | undefined): SessionUser | null
     return null;
   }
 
-  const [encodedPayload, signature] = rawCookie.split(".");
-  if (!encodedPayload || !signature) {
+  const [encodedPayload, signature, ...rest] = rawCookie.split(".");
+  if (!encodedPayload || !signature || rest.length > 0) {
     return null;
   }
 
   const { sessionSecret } = getServerEnv();
-  const expectedSignature = signPayload(encodedPayload, sessionSecret);
+  const expectedSignature = signPayload(kind, encodedPayload, sessionSecret);
   if (!isValidSignature(signature, expectedSignature)) {
     /**
      * Output:
@@ -115,7 +148,9 @@ export function decodeSession(rawCookie: string | undefined): SessionUser | null
       parsed.id <= 0 ||
       typeof parsed.email !== "string" ||
       typeof parsed.sessionId !== "string" ||
-      !Array.isArray(parsed.roles)
+      !Array.isArray(parsed.roles) ||
+      typeof parsed.expiresAt !== "number" ||
+      parsed.expiresAt <= Date.now()
     ) {
       return null;
     }
@@ -137,6 +172,7 @@ export function decodeSession(rawCookie: string | undefined): SessionUser | null
       sessionId: parsed.sessionId,
       twoFactorSetupRequired: parsed.twoFactorSetupRequired === true,
       isReadOnly: parsed.isReadOnly === true,
+      expiresAt: parsed.expiresAt,
     };
   } catch {
     /**
@@ -150,10 +186,10 @@ export function decodeSession(rawCookie: string | undefined): SessionUser | null
 /**
  * Propósito: Quita sessionId antes de devolver el usuario al cliente.
  */
-export function toClientUser(session: SessionUser): PublicUser {
+export function toClientUser(session: SessionUser): ClientSessionUser {
   /**
    * Output:
-   * @returns PublicUser — Perfil sin identificador de sesión
+   * @returns ClientSessionUser — Perfil sin identificador de sesión
    */
   return {
     id: session.id,
@@ -161,6 +197,8 @@ export function toClientUser(session: SessionUser): PublicUser {
     fullName: session.fullName,
     phone: session.phone,
     roles: session.roles,
+    twoFactorSetupRequired: session.twoFactorSetupRequired,
+    isReadOnly: session.isReadOnly,
   };
 }
 
@@ -174,7 +212,11 @@ export async function getSession(): Promise<SessionUser | null> {
    * Output:
    * @returns SessionUser | null — Usuario autenticado o null
    */
-  return decodeSession(store.get(sessionCookieName)?.value);
+  const decoded = decodeSession(store.get(sessionCookieName)?.value);
+  if (!decoded) {
+    return null;
+  }
+  return toStoredUser(decoded);
 }
 
 /**
@@ -203,10 +245,15 @@ export async function requireSession(): Promise<SessionUser> {
 export async function writeSession(
   user: SessionUser,
   maxAgeSeconds: number = SESSION_MAX_AGE_SECONDS,
+  expiresAt?: number,
 ): Promise<void> {
   const { sessionCookieName } = getServerEnv();
   const store = await cookies();
-  store.set(sessionCookieName, encodeSession(user), buildAuthCookieOptions(maxAgeSeconds));
+  const value = encodeSession(user, maxAgeSeconds, "session", expiresAt);
+  const remainingSeconds = expiresAt
+    ? Math.max(1, Math.min(maxAgeSeconds, Math.floor((expiresAt - Date.now()) / 1000)))
+    : maxAgeSeconds;
+  store.set(sessionCookieName, value, buildAuthCookieOptions(remainingSeconds));
   /**
    * Output:
    * Side effects — Escribe cookie firmada; no retorna datos
@@ -221,9 +268,10 @@ export async function clearSession(): Promise<void> {
   const store = await cookies();
   store.delete(sessionCookieName);
   store.delete(IMPERSONATION_RETURN_COOKIE);
+  store.delete(TWO_FACTOR_CHALLENGE_COOKIE);
   /**
    * Output:
-   * Side effects — Borra la cookie de sesión y la del super admin guardada en "ver como"
+   * Side effects — Borra la sesión, la cookie del super admin de "ver como" y el desafío 2FA
    */
 }
 
@@ -238,7 +286,7 @@ function buildAuthCookieOptions(maxAgeSeconds: number) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: getServerEnv().isProduction,
+    secure: getServerEnv().secureCookies,
     path: "/",
     maxAge: maxAgeSeconds,
   };
@@ -315,7 +363,7 @@ export async function beginImpersonation(
   const store = await cookies();
   store.set(
     IMPERSONATION_RETURN_COOKIE,
-    encodeSession(adminSession),
+    encodeSession(adminSession, IMPERSONATION_MAX_AGE_SECONDS, "return"),
     buildAuthCookieOptions(IMPERSONATION_MAX_AGE_SECONDS),
   );
   await writeSession({ ...tenantSession, isReadOnly: true }, IMPERSONATION_MAX_AGE_SECONDS);
@@ -331,7 +379,7 @@ export async function beginImpersonation(
  */
 export async function endImpersonation(currentSession: SessionUser | null): Promise<SessionUser | null> {
   const store = await cookies();
-  const adminSession = decodeSession(store.get(IMPERSONATION_RETURN_COOKIE)?.value);
+  const adminSession = decodeSession(store.get(IMPERSONATION_RETURN_COOKIE)?.value, "return");
   store.delete(IMPERSONATION_RETURN_COOKIE);
   if (!currentSession?.isReadOnly) {
     /**
@@ -340,14 +388,19 @@ export async function endImpersonation(currentSession: SessionUser | null): Prom
      */
     return null;
   }
-  if (adminSession) {
-    await writeSession(adminSession);
-  } else {
+  if (!adminSession) {
     await clearSession();
+    /**
+     * Output:
+     * @returns null — La cookie de retorno no es válida o caducó: vuelve al login
+     */
+    return null;
   }
+  const restored = toStoredUser(adminSession);
+  await writeSession(restored);
   /**
    * Output:
-   * @returns SessionUser | null — Sesión restaurada o null (vuelve al login)
+   * @returns SessionUser — Sesión del super admin restaurada (el backend revalida el sessionId)
    */
-  return adminSession;
+  return restored;
 }

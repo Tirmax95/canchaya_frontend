@@ -21,9 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getTranslator();
   /**
    * Output:
-   * @returns Metadata — Título localizado
+   * @returns Metadata — Título localizado; `no-referrer` porque `next` puede llevar el token
+   *   de una invitación
    */
-  return { title: t("auth.loginTitle") };
+  return { title: t("auth.loginTitle"), referrer: "no-referrer" };
 }
 
 /**

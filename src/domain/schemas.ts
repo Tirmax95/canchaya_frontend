@@ -65,6 +65,13 @@ export const twoFactorCodeSchema = z.object({
     .max(16, "Código inválido"),
 });
 
+export const disableTwoFactorSchema = twoFactorCodeSchema.extend({
+  currentPassword: z
+    .string({ error: "Escribe tu contraseña actual" })
+    .min(1, "Escribe tu contraseña actual")
+    .max(128),
+});
+
 export const invitationTokenSchema = z.object({ token: opaqueTokenSchema });
 
 export const inviteMemberSchema = z.object({
@@ -103,26 +110,39 @@ export const profileSchema = z.object({
   email: z.string().trim().email("Ingresa un correo válido"),
   fullName: z.string().trim().min(2).max(80).optional().or(z.literal("")),
   phone: phoneSchema,
+  /** Obligatoria solo si cambia el correo (lo exige el backend para evitar tomas de cuenta). */
+  currentPassword: z.string().max(128).optional().or(z.literal("")),
 });
+
+/** Imágenes remotas: solo https (sin javascript:, data: ni contenido mixto). */
+const imageUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .url("La imagen debe ser una URL https")
+  .refine((value) => value.startsWith("https://"), "La imagen debe ser una URL https");
+
+/** Id numérico positivo: nunca se interpola sin validar en una ruta del backend. */
+export const positiveIdSchema = z.coerce.number().int().positive().max(2_147_483_647);
 
 export const establishmentSchema = z.object({
   name: z.string().trim().min(2, "El nombre es obligatorio").max(120),
   address: z.string().trim().min(3, "La dirección es obligatoria").max(180),
   phone: z.string().trim().min(6).max(20).optional().or(z.literal("")),
-  image_establishment: z
-    .string()
-    .trim()
-    .url("La imagen debe ser una URL http(s)")
-    .max(500),
+  image_establishment: imageUrlSchema,
 });
 
 export const fieldSchema = z.object({
   id_establishment: z.coerce.number().int().positive(),
-  number_field: z.string().trim().min(1, "El número de cancha es obligatorio"),
+  number_field: z.string().trim().min(1, "El número de cancha es obligatorio").max(40),
   description: z.string().trim().max(400).optional().or(z.literal("")),
-  base_price_per_hour: z.coerce.number().positive("El precio debe ser mayor a 0"),
+  base_price_per_hour: z.coerce
+    .number()
+    .int("El precio debe ser un valor entero")
+    .positive("El precio debe ser mayor a 0")
+    .max(50_000_000, "El precio es demasiado alto"),
   owner_id: z.coerce.number().int().positive().optional(),
-  image_fields: z.string().trim().url("La imagen debe ser una URL http(s)").max(500),
+  image_fields: imageUrlSchema,
 });
 
 const isoDateSchema = z
@@ -249,6 +269,25 @@ export const createRetoSchema = z.object({
   venueText: z.string().trim().min(3).max(200),
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
+});
+
+export const teamActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("invite"), teamId: positiveIdSchema, userId: positiveIdSchema }),
+  z.object({ action: z.enum(["accept", "decline"]), inviteId: positiveIdSchema }),
+]);
+
+export const retoActionSchema = z.object({
+  action: z.enum(["accept", "decline"]),
+  retoId: positiveIdSchema,
+});
+
+export const pickupApproveSchema = z.object({
+  action: z.literal("approve"),
+  paymentId: positiveIdSchema,
+});
+
+export const pickupCheckoutSchema = z.object({
+  matchId: positiveIdSchema,
 });
 
 export const holdSlotSchema = z.object({

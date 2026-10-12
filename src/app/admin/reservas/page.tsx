@@ -1,6 +1,6 @@
 import { requireAdminModule } from "@/application/admin-access";
 import { getStaffReservationViews } from "@/application/booking";
-import { requireSession } from "@/core/auth/session";
+import { requireSession, toClientUser } from "@/core/auth/session";
 import { getTranslator } from "@/core/i18n/get-locale";
 import { parseInboxTenantKey } from "@/domain/reservation-inbox";
 import { StaffReservationBoard } from "@/features/booking/staff-reservation-board";
@@ -44,7 +44,7 @@ export default async function AdminReservationsPage({
       <PageHeader kicker={t("admin.reservationsKicker")} title={t("admin.reservationsTitle")} />
       <StaffReservationBoard
         reservations={reservations}
-        user={session}
+        user={toClientUser(session)}
         initialTenantKey={parseInboxTenantKey(tenant)}
       />
     </div>

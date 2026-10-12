@@ -1,5 +1,5 @@
 import { requireStaff } from "@/core/auth/guards";
-import { handleRoute } from "@/core/http/route";
+import { handleRoute, parsePositiveIntParam } from "@/core/http/route";
 import { confirmReservation } from "@/data/reservation.repository";
 
 /**
@@ -11,7 +11,7 @@ export async function PUT(
 ) {
   return handleRoute(async () => {
     await requireStaff();
-    const reservationId = Number((await context.params).id);
+    const reservationId = parsePositiveIntParam((await context.params).id, "reserva");
     return { reservation: await confirmReservation(reservationId) };
   }, "No se pudo confirmar la reserva");
 }

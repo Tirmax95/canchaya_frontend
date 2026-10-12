@@ -261,6 +261,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "payment_gateway.credentials_updated": "Actualizó llaves de una pasarela",
   "payment_method.toggled": "Encendió o apagó un medio de pago",
   "payment_intent.settled": "Confirmó un pago manual",
+  "user.role_assigned": "Asignó un rol",
+  "reservation.updated": "Modificó una reserva",
+  "reservation.cancelled_by_staff": "Canceló una reserva desde el panel",
 };
 
 /**

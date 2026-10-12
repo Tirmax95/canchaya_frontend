@@ -109,6 +109,9 @@ export const AUDIT_ACTION_KEYS: Record<string, MessageKey> = {
   "payment_gateway.credentials_updated": "labels.auditGatewayCredentials",
   "payment_method.toggled": "labels.auditMethodToggled",
   "payment_intent.settled": "labels.auditIntentSettled",
+  "user.role_assigned": "labels.auditRoleAssigned",
+  "reservation.updated": "labels.auditReservationUpdated",
+  "reservation.cancelled_by_staff": "labels.auditReservationCancelledByStaff",
 };
 
 const TENANT_MODULE_LABEL_KEYS = {

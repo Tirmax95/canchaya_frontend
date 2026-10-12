@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/core/i18n/provider";
-import type { SessionUser } from "@/domain/user";
+import type { ClientSessionUser } from "@/domain/user";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { TextField } from "@/shared/ui/input";
@@ -11,7 +11,7 @@ import { useState } from "react";
 /**
  * Propósito: Edita el perfil del usuario autenticado a través del BFF.
  */
-export function ProfileForm({ user }: { user: SessionUser }) {
+export function ProfileForm({ user }: { user: ClientSessionUser }) {
   const router = useRouter();
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +34,7 @@ export function ProfileForm({ user }: { user: SessionUser }) {
         email: String(formData.get("email") ?? ""),
         fullName: String(formData.get("fullName") ?? ""),
         phone: String(formData.get("phone") ?? ""),
+        currentPassword: String(formData.get("currentPassword") ?? ""),
       }),
     });
     const payload = (await response.json()) as { message?: string };
@@ -67,6 +68,14 @@ export function ProfileForm({ user }: { user: SessionUser }) {
         name="phone"
         defaultValue={user.phone ?? ""}
         placeholder="+573001112233"
+      />
+      <TextField
+        label={t("profile.currentPassword")}
+        name="currentPassword"
+        type="password"
+        autoComplete="current-password"
+        maxLength={128}
+        hint={t("profile.currentPasswordHint")}
       />
       <Button type="submit" isLoading={isSubmitting}>
         {t("profile.saveChanges")}

@@ -1,3 +1,4 @@
+import { headers as readRequestHeaders } from "next/headers";
 import { discardExpiredSession, getSession } from "@/core/auth/session";
 import { getServerEnv } from "@/core/config/env";
 import { AppError } from "@/core/errors/app-error";
@@ -30,7 +31,7 @@ export async function requestBackend<T>(request: BackendRequest): Promise<T> {
    * @returns T — Cuerpo JSON tipado del backend
    */
   return fetchBackend(request, "application/json", async (response) => {
-    const payload = await parseJsonSafely(response);
+    const payload = stripSensitiveFields(await parseJsonSafely(response));
     if (hasBackendErrorShape(payload)) {
       /**
        * Output:
@@ -73,7 +74,9 @@ async function fetchBackend<T>(
   accept: string,
   readBody: (response: Response) => Promise<T>,
 ): Promise<T> {
-  const { backendUrl } = getServerEnv();
+  const { backendUrl, bffSharedSecret } = getServerEnv();
+  assertSafeBackendPath(request.path);
+  const clientIp = bffSharedSecret ? await resolveClientIp() : null;
   const method = request.method ?? "GET";
   const requestId = crypto.randomUUID();
   const controller = new AbortController();
@@ -95,6 +98,9 @@ async function fetchBackend<T>(
           ? { "Content-Type": "application/json" }
           : {}),
         ...(request.sessionId ? { "X-Session-Id": request.sessionId } : {}),
+        ...(clientIp && bffSharedSecret
+          ? { "X-Client-Ip": clientIp, "X-Bff-Secret": bffSharedSecret }
+          : {}),
       },
       body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
       cache: "no-store",
@@ -155,6 +161,57 @@ async function fetchBackend<T>(
 }
 
 /**
+ * Propósito: IP del navegador para que el backend aplique rate limit por usuario real y no
+ * por la IP del BFF. Solo se lee la cabecera que pone el proxy de confianza
+ * (`CLIENT_IP_HEADER`, p. ej. `x-real-ip`); sin esa variable no se reenvía nada, porque
+ * cualquier cliente podría inventarla.
+ */
+async function resolveClientIp(): Promise<string | null> {
+  const headerName = process.env.CLIENT_IP_HEADER?.trim().toLowerCase();
+  if (!headerName) {
+    return null;
+  }
+  try {
+    const raw = (await readRequestHeaders()).get(headerName) ?? "";
+    // En X-Forwarded-For el último hop es el que añadió nuestro proxy; los anteriores
+    // los controla el cliente.
+    const candidate = raw.split(",").at(-1)?.trim() ?? "";
+    /**
+     * Output:
+     * @returns string | null — IP con forma válida o null
+     */
+    return /^[0-9a-fA-F:.]{2,45}$/.test(candidate) ? candidate : null;
+  } catch {
+    /**
+     * Output:
+     * @returns null — Fuera de un request (build, tareas en segundo plano)
+     */
+    return null;
+  }
+}
+
+/**
+ * Propósito: Impide que un id mal validado reescriba la ruta hacia otro endpoint del backend
+ * (`../`, `%2e%2e`, `#`, `\\` o caracteres de control). Defensa en profundidad: los route
+ * handlers ya validan los ids con Zod o `parsePositiveIntParam`.
+ */
+function assertSafeBackendPath(path: string): void {
+  const [pathname] = path.split("?", 1);
+  const isUnsafe =
+    !pathname.startsWith("/") ||
+    pathname.startsWith("//") ||
+    /[\u0000-\u001F\u007F\\#]/.test(path) ||
+    pathname.split("/").some((segment) => /^(\.|%2e){1,2}$/i.test(segment));
+  if (isUnsafe) {
+    /**
+     * Output:
+     * @throws AppError — Ruta de backend manipulada
+     */
+    throw new AppError("VALIDATION", "Solicitud inválida", 400);
+  }
+}
+
+/**
  * Propósito: Nombre de archivo de un `Content-Disposition: attachment; filename="..."`.
  */
 function parseAttachmentFileName(contentDisposition: string | null): string | null {
@@ -192,10 +249,48 @@ async function parseJsonSafely(response: Response): Promise<unknown> {
   } catch {
     /**
      * Output:
-     * @returns object — Envuelve texto no-JSON para no perder el mensaje
+     * @returns null — Texto no-JSON (página de error de un proxy, stack): no se reenvía
      */
-    return { message: rawBody };
+    return null;
   }
+}
+
+/** Campos que nunca deben salir del servidor, aunque el backend los incluyera por error. */
+const SENSITIVE_KEYS = new Set([
+  "passwordhash",
+  "password_hash",
+  "password",
+  "totpsecret",
+  "totp_secret",
+  "tokenhash",
+  "token_hash",
+  "backupcodes",
+  "backup_codes",
+  "credentials",
+]);
+
+/**
+ * Propósito: Elimina en profundidad los campos sensibles de una respuesta del backend. Así
+ * la regla "data/ elimina passwordHash" se cumple en un solo punto para todos los endpoints.
+ */
+function stripSensitiveFields(value: unknown, depth = 0): unknown {
+  if (depth > 20 || value === null || typeof value !== "object") {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => stripSensitiveFields(item, depth + 1));
+  }
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (!SENSITIVE_KEYS.has(key.toLowerCase())) {
+      cleaned[key] = stripSensitiveFields(entry, depth + 1);
+    }
+  }
+  /**
+   * Output:
+   * @returns unknown — Mismo valor sin campos sensibles
+   */
+  return cleaned;
 }
 
 interface BackendErrorShape {
@@ -234,7 +329,9 @@ function mapBackendFailure(
   wasSessionSent: boolean,
   requestId?: string,
 ): AppError {
-  const message = extractPublicMessage(payload);
+  // Un 5xx puede traer detalles internos: el usuario solo ve el mensaje genérico.
+  const message =
+    status >= 500 ? "No se pudo completar la operación" : extractPublicMessage(payload).slice(0, 300);
   const code =
     status === 401
       ? wasSessionSent
@@ -275,10 +372,6 @@ function mapBackendFailure(
  * ("Bad Request") y el motivo real viene en `message` (string o lista del ValidationPipe).
  */
 function extractPublicMessage(payload: unknown): string {
-  if (typeof payload === "string" && payload.trim()) {
-    return payload;
-  }
-
   if (payload && typeof payload === "object") {
     const record = payload as { message?: unknown; error?: unknown; statusCode?: unknown };
     const nestMessage = Array.isArray(record.message) ? record.message[0] : record.message;

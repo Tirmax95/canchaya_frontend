@@ -1,7 +1,7 @@
 import { requireSession } from "@/core/auth/session";
 import { handleRoute, readJsonBody } from "@/core/http/route";
 import { createReto, listMyRetos, respondReto } from "@/data/pickup.repository";
-import { createRetoSchema, parseSchema } from "@/domain/schemas";
+import { createRetoSchema, parseSchema, retoActionSchema } from "@/domain/schemas";
 
 /**
  * Propósito: Lista retos de los equipos del actor.
@@ -19,15 +19,10 @@ export async function GET() {
 export async function POST(request: Request) {
   return handleRoute(async () => {
     await requireSession();
-    const body = (await readJsonBody(request)) as {
-      action?: string;
-      retoId?: number;
-    };
-    if (body.action === "accept" && body.retoId) {
-      return { reto: await respondReto(body.retoId, true) };
-    }
-    if (body.action === "decline" && body.retoId) {
-      return { reto: await respondReto(body.retoId, false) };
+    const body = await readJsonBody(request);
+    if (body && typeof body === "object" && "action" in body) {
+      const action = parseSchema(retoActionSchema, body);
+      return { reto: await respondReto(action.retoId, action.action === "accept") };
     }
     const input = parseSchema(createRetoSchema, body);
     return { reto: await createReto(input) };

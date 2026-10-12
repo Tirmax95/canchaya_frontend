@@ -1,7 +1,7 @@
 import { canManageReservation } from "@/core/auth/roles";
 import { requireSession } from "@/core/auth/session";
 import { AppError } from "@/core/errors/app-error";
-import { handleRoute } from "@/core/http/route";
+import { handleRoute, parsePositiveIntParam } from "@/core/http/route";
 import {
   cancelReservation,
   getReservationById,
@@ -16,7 +16,7 @@ export async function PUT(
 ) {
   return handleRoute(async () => {
     const session = await requireSession();
-    const reservationId = Number((await context.params).id);
+    const reservationId = parsePositiveIntParam((await context.params).id, "reserva");
     const reservation = await getReservationById(reservationId);
     if (!canManageReservation(session, reservation.userId)) {
       throw new AppError("FORBIDDEN", "No puedes cancelar esta reserva", 403);

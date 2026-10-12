@@ -3,10 +3,9 @@ import {
   clearTwoFactorChallenge,
   readTwoFactorChallenge,
   toClientUser,
-  writeSession,
 } from "@/core/auth/session";
 import { handleRoute, readJsonBody } from "@/core/http/route";
-import { completeTwoFactorLogin } from "@/data/auth.repository";
+import { completeTwoFactorLogin, establishSession } from "@/data/auth.repository";
 import { parseSchema, twoFactorCodeSchema } from "@/domain/schemas";
 
 /**
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
     }
     const session = await completeTwoFactorLogin(challengeToken, code);
     await clearTwoFactorChallenge();
-    await writeSession(session);
+    await establishSession(session);
     return { user: toClientUser(session), twoFactorSetupRequired: false };
   }, "No se pudo verificar el código");
 }

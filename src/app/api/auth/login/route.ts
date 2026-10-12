@@ -1,11 +1,10 @@
 import {
   clearTwoFactorChallenge,
   toClientUser,
-  writeSession,
   writeTwoFactorChallenge,
 } from "@/core/auth/session";
 import { handleRoute, readJsonBody } from "@/core/http/route";
-import { loginUser } from "@/data/auth.repository";
+import { establishSession, loginUser } from "@/data/auth.repository";
 import { loginSchema, parseSchema } from "@/domain/schemas";
 
 /**
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
       return { twoFactorRequired: true };
     }
     await clearTwoFactorChallenge();
-    await writeSession(outcome.session);
+    await establishSession(outcome.session);
     return {
       user: toClientUser(outcome.session),
       twoFactorSetupRequired: outcome.session.twoFactorSetupRequired === true,

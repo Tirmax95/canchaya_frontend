@@ -58,7 +58,9 @@ export function isStaff(user: Pick<SessionUser, "roles">): boolean {
 }
 
 /**
- * Propósito: Autoriza una reserva: dueño o staff. Evita IDOR en cancelación/lectura.
+ * Propósito: Filtro previo para cancelar una reserva: dueño o staff, nunca en la vista de
+ * solo lectura. No distingue tenant: que el staff pertenezca al club de la cancha lo
+ * comprueba el backend (`assertCanModerateReservation`), que es quien evita el IDOR.
  */
 export function canManageReservation(
   user: SessionUser,
@@ -68,5 +70,5 @@ export function canManageReservation(
    * Output:
    * @returns boolean — True si es dueño de la reserva o staff
    */
-  return user.id === reservationUserId || isStaff(user);
+  return !user.isReadOnly && (user.id === reservationUserId || isStaff(user));
 }

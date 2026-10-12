@@ -3,7 +3,7 @@
 import { isStaff } from "@/core/auth/roles";
 import { useI18n } from "@/core/i18n/provider";
 import type { ReservationView } from "@/domain/reservation";
-import type { SessionUser } from "@/domain/user";
+import type { ClientSessionUser } from "@/domain/user";
 import { useReservationActions } from "@/features/booking/use-reservation-actions";
 import { formatDateTime } from "@/shared/lib/datetime";
 import { formatMoney } from "@/shared/lib/money";
@@ -21,7 +21,7 @@ export function ReservationList({
   showUserId = false,
 }: {
   reservations: ReservationView[];
-  user: SessionUser;
+  user: ClientSessionUser;
   showUserId?: boolean;
 }) {
   const { t, intlLocale } = useI18n();

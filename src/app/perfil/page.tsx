@@ -1,4 +1,4 @@
-import { requireSession } from "@/core/auth/session";
+import { requireSession, toClientUser } from "@/core/auth/session";
 import { getTranslator } from "@/core/i18n/get-locale";
 import {
   getMyGamification,
@@ -92,7 +92,7 @@ export default async function ProfilePage() {
         </section>
       ) : null}
       <div className="rounded-[32px] border border-white/8 bg-pitch p-6">
-        <ProfileForm user={session} />
+        <ProfileForm user={toClientUser(session)} />
       </div>
       <Link
         href="/seguridad"

@@ -1,7 +1,7 @@
-import { toClientUser, writeSession } from "@/core/auth/session";
+import { toClientUser } from "@/core/auth/session";
 import { AppError } from "@/core/errors/app-error";
 import { handleRoute, readJsonBody } from "@/core/http/route";
-import { loginUser, registerUser } from "@/data/auth.repository";
+import { establishSession, loginUser, registerUser } from "@/data/auth.repository";
 import { parseSchema, registerSchema } from "@/domain/schemas";
 
 /**
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
        */
       throw new AppError("CONFLICT", "Cuenta creada. Inicia sesión para continuar.", 409);
     }
-    await writeSession(loginOutcome.session);
+    await establishSession(loginOutcome.session);
     return { user: toClientUser(loginOutcome.session) };
   }, "No se pudo crear la cuenta");
 }
