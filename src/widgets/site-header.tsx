@@ -70,7 +70,11 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/8 bg-ink/75 backdrop-blur-xl">
       {confirmationDialog}
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div
+        className={`mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:px-6 ${
+          user ? "max-w-none lg:pl-5" : "max-w-7xl"
+        }`}
+      >
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-lime font-display text-lg text-ink">
             C
@@ -79,7 +83,12 @@ export function SiteHeader() {
             CanchaYa
           </span>
         </Link>
-        <nav className="hidden min-w-0 items-center gap-3 overflow-x-auto md:flex lg:gap-5">
+        {/* Con sesión la navegación vive en el menú lateral (AppShell / AdminShell). */}
+        <nav
+          className={`hidden min-w-0 items-center gap-3 overflow-x-auto lg:gap-5 ${
+            user ? "" : "md:flex"
+          }`}
+        >
           {links.map((link) => (
             <Link
               key={link.href}

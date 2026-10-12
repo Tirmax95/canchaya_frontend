@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import { Outfit, Syne } from "next/font/google";
+import { cookies } from "next/headers";
 import { getSession, toClientUser } from "@/core/auth/session";
-import { getLocale, getTranslator } from "@/core/i18n/get-locale";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { I18nProvider } from "@/core/i18n/provider";
+import { buildSideMenu } from "@/features/navigation/build-menu";
+import {
+  SIDEBAR_COLLAPSED_VALUE,
+  SIDEBAR_COOKIE_NAME,
+} from "@/features/navigation/sidebar-preference";
 import { QueryProvider } from "@/widgets/query-provider";
 import { SessionProvider } from "@/widgets/session-provider";
+import { AppShell } from "@/widgets/app-shell";
 import { ClientErrorReporter } from "@/widgets/client-error-reporter";
 import { SiteFooter } from "@/widgets/site-footer";
 import { SiteHeader } from "@/widgets/site-header";
@@ -48,7 +55,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [session, locale] = await Promise.all([getSession(), getLocale()]);
+  const [session, { locale, t }, cookieStore] = await Promise.all([
+    getSession(),
+    getTranslator(),
+    cookies(),
+  ]);
+  const menu =
+    session && !session.twoFactorSetupRequired ? await buildSideMenu(session, t) : null;
+  const isSidebarCollapsed =
+    cookieStore.get(SIDEBAR_COOKIE_NAME)?.value === SIDEBAR_COLLAPSED_VALUE;
 
   /**
    * Output:
@@ -63,8 +78,13 @@ export default async function RootLayout({
               <ClientErrorReporter />
               <div className="flex min-h-screen flex-col">
                 <SiteHeader />
-                <main className="flex-1">{children}</main>
-                <SiteFooter />
+                <AppShell
+                  menu={menu}
+                  initialCollapsed={isSidebarCollapsed}
+                  footer={<SiteFooter />}
+                >
+                  {children}
+                </AppShell>
               </div>
             </SessionProvider>
           </QueryProvider>

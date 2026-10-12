@@ -19,10 +19,13 @@ export function ReservationList({
   reservations,
   user,
   showUserId = false,
+  canModerate = false,
 }: {
   reservations: ReservationView[];
   user: ClientSessionUser;
   showUserId?: boolean;
+  /** Staff con el módulo de reservas habilitado (resuelto en servidor). */
+  canModerate?: boolean;
 }) {
   const { t, intlLocale } = useI18n();
   const { pendingId, error, confirmationDialog, requestReservationChange } =
@@ -57,7 +60,7 @@ export function ReservationList({
       {reservations.map((reservation) => {
         const canCancel =
           reservation.status === "pending" || reservation.status === "confirmed";
-        const canConfirm = isStaff(user) && reservation.status === "pending";
+        const canConfirm = canModerate && reservation.status === "pending";
         return (
           <article
             key={reservation.reservationId}

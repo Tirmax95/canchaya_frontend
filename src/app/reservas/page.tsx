@@ -1,4 +1,6 @@
+import { getAdminAccess } from "@/application/admin-access";
 import { getMyReservationViews } from "@/application/booking";
+import { isStaff } from "@/core/auth/roles";
 import { requireSession, toClientUser } from "@/core/auth/session";
 import { getTranslator } from "@/core/i18n/get-locale";
 import type { ReservationView } from "@/domain/reservation";
@@ -33,6 +35,11 @@ export default async function ReservationsPage() {
   } catch {
     error = t("booking.loadError");
   }
+  const canModerate = isStaff(session)
+    ? await getAdminAccess()
+        .then((access) => access.enabledModules.includes("reservations"))
+        .catch(() => false)
+    : false;
 
   /**
    * Output:
@@ -51,7 +58,11 @@ export default async function ReservationsPage() {
         }
       />
       {error ? <Alert>{error}</Alert> : (
-        <ReservationList reservations={reservations} user={toClientUser(session)} />
+        <ReservationList
+          reservations={reservations}
+          user={toClientUser(session)}
+          canModerate={canModerate}
+        />
       )}
     </div>
   );
