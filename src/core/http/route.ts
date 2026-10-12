@@ -5,6 +5,7 @@ import {
   serializeAppError,
   toAppError,
 } from "@/core/errors/app-error";
+import { recordBffError } from "@/core/observability/record-bff-error";
 
 /**
  * Propósito: Envuelve un route handler para devolver JSON consistente y seguro.
@@ -12,6 +13,7 @@ import {
 export async function handleRoute(
   execute: () => Promise<unknown>,
   fallbackMessage: string,
+  options?: { skipErrorLog?: boolean },
 ): Promise<NextResponse> {
   try {
     const payload = await execute();
@@ -25,6 +27,9 @@ export async function handleRoute(
     return NextResponse.json(payload);
   } catch (error) {
     const appError = toAppError(error, fallbackMessage);
+    if (appError.status >= 500 && !options?.skipErrorLog) {
+      void recordBffError(appError, fallbackMessage);
+    }
     /**
      * Output:
      * @returns NextResponse — JSON de error sin stack ni secretos
@@ -99,6 +104,9 @@ export async function handleFileRoute(
     });
   } catch (error) {
     const appError = toAppError(error, fallbackMessage);
+    if (appError.status >= 500) {
+      void recordBffError(appError, fallbackMessage);
+    }
     /**
      * Output:
      * @returns NextResponse — JSON de error

@@ -1,6 +1,8 @@
 import { requireSuperAdminAccess } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
+import { TENANT_STATUS_KEYS, translateMappedLabel } from "@/core/i18n/label-keys";
 import { listPlatformTenants } from "@/data/platform.repository";
-import { TENANT_STATUSES, TENANT_STATUS_LABELS, type TenantStatus } from "@/domain/platform";
+import { TENANT_STATUSES, type TenantStatus } from "@/domain/platform";
 import { TenantAdminCard } from "@/features/admin/platform/tenant-admin-card";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -8,7 +10,17 @@ import { cn } from "@/shared/lib/cn";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Admin · Tenants" };
+/**
+ * Propósito: Metadata del listado de tenants.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.tenantsMeta") };
+}
 
 /**
  * Propósito: Estado del filtro desde la URL (allowlist).
@@ -30,16 +42,20 @@ export default async function TenantsAdminPage({
 }: {
   searchParams: Promise<{ estado?: string }>;
 }) {
-  const [, { estado }] = await Promise.all([requireSuperAdminAccess(), searchParams]);
+  const [{ t }, , { estado }] = await Promise.all([
+    getTranslator(),
+    requireSuperAdminAccess(),
+    searchParams,
+  ]);
   const statusFilter = parseStatusFilter(estado);
   const allTenants = await listPlatformTenants();
   const tenants = statusFilter ? allTenants.filter((tenant) => tenant.status === statusFilter) : allTenants;
   const countByStatus = (status: TenantStatus) => allTenants.filter((tenant) => tenant.status === status).length;
   const filterOptions: Array<{ status: TenantStatus | null; label: string }> = [
-    { status: null, label: `Todos (${allTenants.length})` },
+    { status: null, label: `${t("platform.allFilter")} (${allTenants.length})` },
     ...TENANT_STATUSES.map((status) => ({
       status,
-      label: `${TENANT_STATUS_LABELS[status]} (${countByStatus(status)})`,
+      label: `${translateMappedLabel(t, TENANT_STATUS_KEYS, status)} (${countByStatus(status)})`,
     })),
   ];
 
@@ -50,11 +66,15 @@ export default async function TenantsAdminPage({
   return (
     <div className="space-y-8">
       <PageHeader
-        kicker="Plataforma"
-        title="Tenants"
-        description={`${allTenants.length} organizaciones · ${countByStatus("pending")} por aprobar · ${countByStatus("suspended")} suspendidas. Aprueba nuevos tenants y configura cuánto paga cada uno, qué módulos ve y si puede operar.`}
+        kicker={t("platform.kicker")}
+        title={t("platform.tenantsTitle")}
+        description={t("platform.tenantsPageDescription", {
+          total: allTenants.length,
+          pending: countByStatus("pending"),
+          suspended: countByStatus("suspended"),
+        })}
       />
-      <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+      <nav aria-label={t("platform.tenantsFilter")} className="flex flex-wrap gap-2">
         {filterOptions.map((option) => (
           <Link
             key={option.label}
@@ -72,7 +92,10 @@ export default async function TenantsAdminPage({
         ))}
       </nav>
       {tenants.length === 0 ? (
-        <EmptyState title="No hay tenants" description="Cuando un dueño registre su sede aparecerá aquí." />
+        <EmptyState
+          title={t("platform.tenantsEmptyTitle")}
+          description={t("platform.tenantsEmptyDescription")}
+        />
       ) : (
         <div className="space-y-4">
           {tenants.map((tenant) => (

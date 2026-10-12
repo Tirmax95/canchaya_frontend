@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { cn } from "@/shared/lib/cn";
 import { useId, useState } from "react";
 
@@ -28,6 +29,7 @@ export function ConfirmWithInput({
   isPending: boolean;
   onConfirm: (value: string) => Promise<boolean>;
 }) {
+  const { t } = useI18n();
   const inputId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -92,14 +94,14 @@ export function ConfirmWithInput({
           toneClassName,
         )}
       >
-        {isPending ? "Guardando…" : confirmLabel}
+        {isPending ? t("platform.saving") : confirmLabel}
       </button>
       <button
         type="button"
         onClick={() => setIsOpen(false)}
         className="rounded-full px-3 py-2 text-xs text-mist hover:text-bone"
       >
-        Cancelar
+        {t("common.cancel")}
       </button>
     </div>
   );

@@ -1,11 +1,12 @@
 import { requireSuperAdminAccess } from "@/application/admin-access";
-import { listOutboxEmails } from "@/data/platform.repository";
+import { getTranslator } from "@/core/i18n/get-locale";
 import {
-  EMAIL_STATUSES,
-  EMAIL_STATUS_LABELS,
-  EMAIL_TEMPLATE_LABELS,
-  type EmailStatus,
-} from "@/domain/platform";
+  EMAIL_STATUS_KEYS,
+  EMAIL_TEMPLATE_KEYS,
+  translateMappedLabel,
+} from "@/core/i18n/label-keys";
+import { listOutboxEmails } from "@/data/platform.repository";
+import { EMAIL_STATUSES, type EmailStatus } from "@/domain/platform";
 import { PanelSection, StatusPill, type PillTone } from "@/features/admin/platform/platform-ui";
 import { cn } from "@/shared/lib/cn";
 import { formatDateTime } from "@/shared/lib/datetime";
@@ -15,7 +16,17 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Admin · Correos" };
+/**
+ * Propósito: Metadata de correos de plataforma.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.emailsMeta") };
+}
 
 const EMAILS_PATH = "/admin/correos";
 const EMAILS_PAGE_SIZE = 50;
@@ -51,7 +62,11 @@ export default async function PlatformEmailsPage({
 }: {
   searchParams: Promise<{ estado?: string; antes?: string }>;
 }) {
-  const [, { estado, antes }] = await Promise.all([requireSuperAdminAccess(), searchParams]);
+  const [{ t, intlLocale }, , { estado, antes }] = await Promise.all([
+    getTranslator(),
+    requireSuperAdminAccess(),
+    searchParams,
+  ]);
   const statusFilter = EMAIL_STATUSES.find((status) => status === estado) ?? null;
   const beforeEmailId = Number(antes);
   const outbox = await listOutboxEmails({
@@ -68,17 +83,16 @@ export default async function PlatformEmailsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Plataforma"
-        title="Correos"
-        description="Todo lo que CanchaYa envía: facturas, recordatorios de vencimiento, aprobaciones, invitaciones y accesos."
+        kicker={t("platform.kicker")}
+        title={t("platform.emailsTitle")}
+        description={t("platform.emailsDescription")}
       />
       {outbox.isProviderConfigured ? null : (
         <Alert tone="info">
-          No hay proveedor de correo configurado (RESEND_API_KEY). Los correos se guardan aquí como
-          &quot;No enviado&quot;; configúralo en el backend para que salgan solos.
+          {t("platform.emailProviderMissing")}
         </Alert>
       )}
-      <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+      <nav aria-label={t("platform.filterByStatus")} className="flex flex-wrap gap-2">
         {[null, ...EMAIL_STATUSES].map((status) => (
           <Link
             key={status ?? "all"}
@@ -91,13 +105,16 @@ export default async function PlatformEmailsPage({
                 : "border-white/10 text-mist hover:text-bone",
             )}
           >
-            {status ? EMAIL_STATUS_LABELS[status] : "Todos"}
+            {status ? translateMappedLabel(t, EMAIL_STATUS_KEYS, status) : t("platform.allFilter")}
           </Link>
         ))}
       </nav>
-      <PanelSection title="Bandeja de salida">
+      <PanelSection title={t("platform.outbox")}>
         {outbox.emails.length === 0 ? (
-          <EmptyState title="Sin correos" description="Los correos de la plataforma aparecerán aquí." />
+          <EmptyState
+            title={t("platform.emailsEmptyTitle")}
+            description={t("platform.emailsEmptyDescription")}
+          />
         ) : (
           <ol className="divide-y divide-white/5">
             {outbox.emails.map((email) => (
@@ -106,25 +123,31 @@ export default async function PlatformEmailsPage({
                   <div className="min-w-0">
                     <p className="text-bone">{email.subject}</p>
                     <p className="text-xs text-mist">
-                      {EMAIL_TEMPLATE_LABELS[email.template] ?? email.template} · para {email.toEmail}
+                      {translateMappedLabel(t, EMAIL_TEMPLATE_KEYS, email.template)} · {email.toEmail}
                     </p>
                   </div>
                   <div className="text-right text-xs text-mist">
                     <StatusPill tone={EMAIL_STATUS_TONES[email.status]}>
-                      {EMAIL_STATUS_LABELS[email.status]}
+                      {translateMappedLabel(t, EMAIL_STATUS_KEYS, email.status)}
                     </StatusPill>
                     <p className="mt-1">
-                      {email.sentAt ? `Enviado ${formatDateTime(email.sentAt)}` : `Creado ${formatDateTime(email.createdAt)}`}
-                      {email.attempts > 1 ? ` · ${email.attempts} intentos` : ""}
+                      {email.sentAt
+                        ? formatDateTime(email.sentAt, intlLocale)
+                        : formatDateTime(email.createdAt, intlLocale)}
+                      {email.attempts > 1 ? t("platform.attemptsCount", { count: email.attempts }) : ""}
                     </p>
                   </div>
                 </div>
-                {email.lastError ? <p className="text-xs text-danger">Error: {email.lastError}</p> : null}
+                {email.lastError ? (
+                  <p className="text-xs text-danger">
+                    {t("platform.errorPrefix", { message: email.lastError })}
+                  </p>
+                ) : null}
                 {email.isSensitive ? (
-                  <p className="text-xs text-mist">Contenido oculto: incluye un enlace de acceso personal.</p>
+                  <p className="text-xs text-mist">{t("platform.hiddenContent")}</p>
                 ) : (
                   <details className="text-xs text-mist">
-                    <summary className="cursor-pointer hover:text-bone">Ver contenido</summary>
+                    <summary className="cursor-pointer hover:text-bone">{t("platform.viewContent")}</summary>
                     <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white/3 p-3 font-sans">
                       {email.textBody}
                     </pre>
@@ -137,14 +160,14 @@ export default async function PlatformEmailsPage({
         <div className="mt-4 flex justify-between text-sm">
           {antes ? (
             <Link href={buildEmailsHref(statusFilter)} className="text-lime hover:underline">
-              Volver a lo más reciente
+              {t("platform.auditBackRecent")}
             </Link>
           ) : (
             <span />
           )}
           {outbox.emails.length === EMAILS_PAGE_SIZE && oldestEmail ? (
             <Link href={buildEmailsHref(statusFilter, oldestEmail.emailId)} className="text-lime hover:underline">
-              Ver más antiguos
+              {t("platform.auditOlder")}
             </Link>
           ) : null}
         </div>

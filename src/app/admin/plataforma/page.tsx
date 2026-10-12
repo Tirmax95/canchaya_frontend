@@ -1,4 +1,5 @@
 import { requireSuperAdminAccess } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { getPlatformOverview } from "@/data/platform.repository";
 import type { PlatformOverview } from "@/domain/platform";
 import { PanelSection, PickupRevenueStats, StatCard } from "@/features/admin/platform/platform-ui";
@@ -8,10 +9,20 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Admin · Resumen de plataforma" };
-
 const SERIES_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Propósito: Metadata del resumen de plataforma.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.platformOverviewMeta") };
+}
 
 /**
  * Propósito: Completa la serie diaria con días sin actividad para que el gráfico sea continuo.
@@ -33,16 +44,20 @@ function buildContinuousSeries(overview: PlatformOverview) {
  * Propósito: Vista general del dueño de la plataforma: usuarios, tenants, reservas, cobros.
  */
 export default async function PlatformOverviewPage() {
-  await requireSuperAdminAccess();
-  const overview = await getPlatformOverview();
+  const [{ t, intlLocale }, , overview] = await Promise.all([
+    getTranslator(),
+    requireSuperAdminAccess(),
+    getPlatformOverview(),
+  ]);
+  const consultLabel = t("common.consult");
   const series = buildContinuousSeries(overview);
   const peakReservations = Math.max(1, ...series.map((point) => point.reservations));
   const reservations = overview.reservationsLast30Days;
   const reservationStatusRows = [
-    { label: "Confirmadas", value: reservations.confirmed, barClassName: "bg-lime" },
-    { label: "Completadas", value: reservations.completed, barClassName: "bg-mist" },
-    { label: "Pendientes", value: reservations.pending, barClassName: "bg-clay" },
-    { label: "Canceladas", value: reservations.cancelled, barClassName: "bg-danger" },
+    { label: t("labels.reservationConfirmed"), value: reservations.confirmed, barClassName: "bg-lime" },
+    { label: t("labels.reservationCompleted"), value: reservations.completed, barClassName: "bg-mist" },
+    { label: t("labels.reservationPending"), value: reservations.pending, barClassName: "bg-clay" },
+    { label: t("labels.reservationCancelled"), value: reservations.cancelled, barClassName: "bg-danger" },
   ];
 
   /**
@@ -52,51 +67,62 @@ export default async function PlatformOverviewPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Plataforma"
-        title="Resumen"
-        description={`Toda la actividad de CanchaYa. Actualizado ${formatDateTime(overview.generatedAt)}.`}
+        kicker={t("platform.kicker")}
+        title={t("platform.overviewTitle")}
+        description={t("platform.overviewDescription", {
+          date: formatDateTime(overview.generatedAt, intlLocale),
+        })}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Reservado (30 días)"
-          value={formatMoney(reservations.grossBookings)}
-          detail={`${reservations.bookedHours} h en reservas confirmadas o jugadas`}
+          label={t("platform.booked30")}
+          value={formatMoney(reservations.grossBookings, intlLocale, consultLabel)}
+          detail={t("platform.booked30Detail", { hours: reservations.bookedHours })}
           tone="positive"
         />
         <StatCard
-          label="Reservas (30 días)"
+          label={t("platform.reservations30")}
           value={String(reservations.total)}
-          detail={`${overview.pickupMatchesLast30Days} partidos abiertos creados`}
+          detail={t("platform.reservations30Detail", { count: overview.pickupMatchesLast30Days })}
         />
         <StatCard
-          label="Tenants"
+          label={t("platform.tenants")}
           value={String(overview.tenants.total)}
-          detail={`${overview.inventory.establishments} sedes · ${overview.inventory.fields} canchas · ${overview.tenants.pending} por aprobar · ${overview.tenants.suspended} suspendidos`}
+          detail={t("platform.tenantsOverviewDetail", {
+            establishments: overview.inventory.establishments,
+            fields: overview.inventory.fields,
+            pending: overview.tenants.pending,
+            suspended: overview.tenants.suspended,
+          })}
           tone={overview.tenants.suspended > 0 ? "danger" : "neutral"}
         />
         <StatCard
-          label="Usuarios"
+          label={t("platform.users")}
           value={String(overview.users.total)}
-          detail={`${overview.users.newLast30Days} nuevos · ${overview.users.owners} dueños · ${overview.users.blocked} bloqueados`}
+          detail={t("platform.usersOverviewDetail", {
+            newUsers: overview.users.newLast30Days,
+            owners: overview.users.owners,
+            blocked: overview.users.blocked,
+          })}
         />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard
-          label="Por cobrar"
-          value={formatMoney(overview.billing.outstandingAmount)}
-          detail={`${overview.billing.outstandingCount} facturas emitidas`}
+          label={t("platform.outstanding")}
+          value={formatMoney(overview.billing.outstandingAmount, intlLocale, consultLabel)}
+          detail={t("platform.outstandingInvoicesDetail", { count: overview.billing.outstandingCount })}
         />
         <StatCard
-          label="Vencido"
-          value={formatMoney(overview.billing.overdueAmount)}
-          detail={`${overview.billing.overdueCount} facturas vencidas`}
+          label={t("platform.overdue")}
+          value={formatMoney(overview.billing.overdueAmount, intlLocale, consultLabel)}
+          detail={t("platform.overdueInvoicesDetail", { count: overview.billing.overdueCount })}
           tone={overview.billing.overdueCount > 0 ? "danger" : "neutral"}
         />
         <StatCard
-          label="Cobrado este mes"
-          value={formatMoney(overview.billing.collectedThisMonth)}
+          label={t("platform.collectedMonth")}
+          value={formatMoney(overview.billing.collectedThisMonth, intlLocale, consultLabel)}
           tone="positive"
         />
       </div>
@@ -106,18 +132,26 @@ export default async function PlatformOverviewPage() {
           href="/admin/tenants?estado=pending"
           className="block rounded-2xl border border-lime/30 bg-lime/8 px-4 py-3 text-sm text-bone hover:bg-lime/12"
         >
-          <strong className="font-semibold">{overview.tenants.pending} tenant(s) esperan aprobación.</strong>{" "}
-          Sus sedes no salen al público hasta que los apruebes →
+          <strong className="font-semibold">
+            {t("platform.pendingApprovalBanner", { count: overview.tenants.pending })}
+          </strong>{" "}
+          {t("platform.pendingApprovalBannerHint")}
         </Link>
       ) : null}
 
-      <PickupRevenueStats pickupRevenue={overview.pickupRevenueLast30Days} periodLabel="30 días" />
+      <PickupRevenueStats pickupRevenue={overview.pickupRevenueLast30Days} periodLabel={t("platform.last30")} />
 
       <PanelSection
-        title="Reservas por día"
-        action={<span className="text-xs text-mist">Últimos {SERIES_DAYS} días · hora Bogotá</span>}
+        title={t("platform.reservationsPerDay")}
+        action={
+          <span className="text-xs text-mist">{t("platform.seriesFootnote", { days: SERIES_DAYS })}</span>
+        }
       >
-        <div className="flex h-44 items-end gap-1" role="img" aria-label="Reservas por día en los últimos 30 días">
+        <div
+          className="flex h-44 items-end gap-1"
+          role="img"
+          aria-label={t("platform.reservationsPerDayAria")}
+        >
           {series.map((point) => (
             <div key={point.day} className="group relative flex h-full flex-1 flex-col justify-end">
               <div
@@ -125,7 +159,8 @@ export default async function PlatformOverviewPage() {
                 style={{ height: `${(point.reservations / peakReservations) * 100}%` }}
               />
               <span className="pointer-events-none absolute -top-9 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2 py-1 text-[11px] text-bone shadow group-hover:block">
-                {point.day.slice(5)} · {point.reservations} · {formatMoney(point.grossBookings)}
+                {point.day.slice(5)} · {point.reservations} ·{" "}
+                {formatMoney(point.grossBookings, intlLocale, consultLabel)}
               </span>
             </div>
           ))}
@@ -138,15 +173,15 @@ export default async function PlatformOverviewPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <PanelSection
-          title="Tenants con más reservas"
+          title={t("platform.topTenants")}
           action={
             <Link href="/admin/tenants" className="text-xs text-lime hover:underline">
-              Ver tenants
+              {t("platform.seeTenantsLink")}
             </Link>
           }
         >
           {overview.topTenants.length === 0 ? (
-            <p className="text-sm text-mist">Aún no hay reservas facturables en los últimos 30 días.</p>
+            <p className="text-sm text-mist">{t("platform.topTenantsEmpty")}</p>
           ) : (
             <ol className="space-y-3">
               {overview.topTenants.map((tenant, index) => (
@@ -155,15 +190,19 @@ export default async function PlatformOverviewPage() {
                     {index + 1}
                   </span>
                   <span className="flex-1 truncate text-bone">{tenant.name}</span>
-                  <span className="text-mist">{tenant.reservations} reservas</span>
-                  <span className="w-28 text-right font-semibold text-bone">{formatMoney(tenant.grossBookings)}</span>
+                  <span className="text-mist">
+                    {t("platform.tenantReservationsCount", { count: tenant.reservations })}
+                  </span>
+                  <span className="w-28 text-right font-semibold text-bone">
+                    {formatMoney(tenant.grossBookings, intlLocale, consultLabel)}
+                  </span>
                 </li>
               ))}
             </ol>
           )}
         </PanelSection>
 
-        <PanelSection title="Estado de las reservas (30 días)">
+        <PanelSection title={t("platform.reservationStatus30")}>
           <div className="space-y-3">
             {reservationStatusRows.map((row) => (
               <div key={row.label}>

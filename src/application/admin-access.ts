@@ -44,13 +44,13 @@ export interface AdminAccess {
 /**
  * Propósito: Resuelve qué puede usar el usuario en el panel en esta request.
  * `cache` deduplica la llamada a /auth/me entre layout y página (1 round-trip por request).
- * El super admin ve todo; el resto, la unión de módulos de sus tenants operables (activos o
- * pendientes de aprobación). Los suspendidos no aportan módulos (el backend ya les niega
- * operar) y se informan aparte, igual que los pendientes.
+ * El super admin ve todo, salvo en "ver como tenant" (`isReadOnly`), que usa el menú del
+ * dueño. El resto ve la unión de módulos de sus tenants operables. Los suspendidos no
+ * aportan módulos y se informan aparte, igual que los pendientes.
  */
 export const getAdminAccess = cache(async (): Promise<AdminAccess> => {
   const session = await requireSession();
-  if (isAdmin(session)) {
+  if (isAdmin(session) && session.isReadOnly !== true) {
     /**
      * Output:
      * @returns AdminAccess — Super admin con todos los módulos
@@ -117,20 +117,21 @@ export async function requireAdminModule(requiredModule: TenantModule): Promise<
 }
 
 /**
- * Propósito: Guard de páginas exclusivas del super admin.
+ * Propósito: Guard de páginas exclusivas del super admin. "Ver como tenant" no cuenta:
+ * esa sesión es de solo lectura y no debe ver logs ni el resto del panel de plataforma.
  */
 export async function requireSuperAdminAccess(): Promise<AdminAccess> {
   const access = await getAdminAccess();
-  if (!access.isSuperAdmin) {
+  if (!access.isSuperAdmin || access.isReadOnly) {
     /**
      * Output:
-     * @throws NEXT_REDIRECT — Staff de tenant no ve configuración global
+     * @throws NEXT_REDIRECT — Staff de tenant, impersonación o no-admin
      */
     redirect("/admin");
   }
   /**
    * Output:
-   * @returns AdminAccess — Super admin
+   * @returns AdminAccess — Super admin con sesión propia
    */
   return access;
 }

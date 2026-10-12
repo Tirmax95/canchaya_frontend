@@ -1,19 +1,19 @@
 "use client";
 
 import { isStaff } from "@/core/auth/roles";
+import { useI18n } from "@/core/i18n/provider";
 import type { ReservationView } from "@/domain/reservation";
 import type { SessionUser } from "@/domain/user";
+import { useReservationActions } from "@/features/booking/use-reservation-actions";
 import { formatDateTime } from "@/shared/lib/datetime";
 import { formatMoney } from "@/shared/lib/money";
 import { StatusBadge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
+import { Button, ButtonLink } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 /**
- * Propósito: Lista reservas y ejecuta cancelar/confirmar con autorización en BFF.
+ * Propósito: Lista las reservas del jugador (o un recorte simple) y dispara cancelar/pagar.
  */
 export function ReservationList({
   reservations,
@@ -24,27 +24,9 @@ export function ReservationList({
   user: SessionUser;
   showUserId?: boolean;
 }) {
-  const router = useRouter();
-  const [pendingId, setPendingId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Propósito: Llama un endpoint de mutación y refresca la vista.
-   */
-  async function mutate(path: string, reservationId: number) {
-    setPendingId(reservationId);
-    setError(null);
-    const response = await fetch(path, { method: "PUT" });
-    const payload = (await response.json().catch(() => ({}))) as {
-      message?: string;
-    };
-    if (!response.ok) {
-      setError(payload.message ?? "No se pudo actualizar la reserva");
-    } else {
-      router.refresh();
-    }
-    setPendingId(null);
-  }
+  const { t, intlLocale } = useI18n();
+  const { pendingId, error, confirmationDialog, requestReservationChange } =
+    useReservationActions();
 
   if (reservations.length === 0) {
     /**
@@ -53,11 +35,11 @@ export function ReservationList({
      */
     return (
       <EmptyState
-        title="Aún no hay partidos"
-        description="Reserva una cancha y tu agenda aparecerá aquí."
+        title={t("booking.emptyTitle")}
+        description={t("booking.emptyDescription")}
         action={
           <Link href="/canchas" className="text-lime hover:underline">
-            Ver canchas
+            {t("booking.seeCourts")}
           </Link>
         }
       />
@@ -70,12 +52,12 @@ export function ReservationList({
    */
   return (
     <div className="space-y-3">
+      {confirmationDialog}
       {error ? <p className="text-sm text-danger">{error}</p> : null}
       {reservations.map((reservation) => {
         const canCancel =
           reservation.status === "pending" || reservation.status === "confirmed";
-        const canConfirm =
-          isStaff(user) && reservation.status === "pending";
+        const canConfirm = isStaff(user) && reservation.status === "pending";
         return (
           <article
             key={reservation.reservationId}
@@ -90,12 +72,12 @@ export function ReservationList({
                   {reservation.fieldName}
                 </h3>
                 <p className="mt-2 text-sm text-mist">
-                  {formatDateTime(reservation.startTime)} →{" "}
-                  {formatDateTime(reservation.endTime)}
+                  {formatDateTime(reservation.startTime, intlLocale)} →{" "}
+                  {formatDateTime(reservation.endTime, intlLocale)}
                 </p>
                 {showUserId ? (
                   <p className="mt-1 text-xs text-mist">
-                    Jugador #{reservation.userId}
+                    {t("booking.playerNumber", { id: reservation.userId })}
                   </p>
                 ) : null}
                 {reservation.notes ? (
@@ -105,35 +87,36 @@ export function ReservationList({
               <div className="flex flex-col items-start gap-3 sm:items-end">
                 <StatusBadge status={reservation.status} />
                 <p className="text-sm text-bone">
-                  {formatMoney(reservation.priceEstimate)}
+                  {formatMoney(reservation.priceEstimate, intlLocale, t("common.consult"))}
                 </p>
                 <div className="flex gap-2">
+                  {!isStaff(user) && reservation.status === "pending" ? (
+                    <ButtonLink href={`/reservas/${reservation.reservationId}/pagar`}>
+                      {t("booking.pay")}
+                    </ButtonLink>
+                  ) : null}
                   {canConfirm ? (
                     <Button
                       variant="primary"
                       isLoading={pendingId === reservation.reservationId}
+                      disabled={user.isReadOnly}
                       onClick={() =>
-                        mutate(
-                          `/api/reservations/${reservation.reservationId}/confirm`,
-                          reservation.reservationId,
-                        )
+                        requestReservationChange(reservation.reservationId, "confirm")
                       }
                     >
-                      Confirmar
+                      {t("booking.confirm")}
                     </Button>
                   ) : null}
                   {canCancel ? (
                     <Button
                       variant="danger"
                       isLoading={pendingId === reservation.reservationId}
+                      disabled={user.isReadOnly}
                       onClick={() =>
-                        mutate(
-                          `/api/reservations/${reservation.reservationId}/cancel`,
-                          reservation.reservationId,
-                        )
+                        requestReservationChange(reservation.reservationId, "cancel")
                       }
                     >
-                      Cancelar
+                      {t("booking.cancel")}
                     </Button>
                   ) : null}
                 </div>

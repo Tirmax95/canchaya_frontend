@@ -1,9 +1,8 @@
 "use client";
 
-import {
-  getPasswordPolicyViolation,
-  PASSWORD_MIN_LENGTH,
-} from "@/domain/password-policy";
+import { useI18n } from "@/core/i18n/provider";
+import { translatePasswordPolicyViolation } from "@/core/i18n/password-messages";
+import { PASSWORD_MIN_LENGTH } from "@/domain/password-policy";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { TextField } from "@/shared/ui/input";
@@ -17,6 +16,7 @@ import { useState } from "react";
  */
 export function RegisterForm() {
   const router = useRouter();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVenueOwner, setIsVenueOwner] = useState(false);
@@ -34,8 +34,8 @@ export function RegisterForm() {
     setError(null);
 
     const passwordViolation =
-      getPasswordPolicyViolation(password) ??
-      (password !== passwordConfirmation ? "Las contraseñas no coinciden" : null);
+      translatePasswordPolicyViolation(password, t) ??
+      (password !== passwordConfirmation ? t("auth.passwordsMismatch") : null);
     if (passwordViolation) {
       setError(passwordViolation);
       /**
@@ -63,7 +63,7 @@ export function RegisterForm() {
     const payload = (await response.json()) as { message?: string };
 
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo crear la cuenta");
+      setError(payload.message ?? t("auth.registerFailed"));
       setIsSubmitting(false);
       /**
        * Output:
@@ -88,27 +88,21 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
       <TextField
-        label="Nombre completo"
+        label={t("auth.fullName")}
         name="fullName"
         required
         autoComplete="name"
         placeholder="Alexis Losada"
       />
+      <TextField label={t("auth.email")} name="email" type="email" required autoComplete="username" />
       <TextField
-        label="Correo"
-        name="email"
-        type="email"
-        required
-        autoComplete="username"
-      />
-      <TextField
-        label="Teléfono"
+        label={t("auth.phone")}
         name="phone"
         placeholder="+573001112233"
-        hint="Formato internacional, opcional"
+        hint={t("auth.phoneHint")}
       />
       <PasswordField
-        label="Contraseña"
+        label={t("auth.password")}
         name="password"
         required
         minLength={PASSWORD_MIN_LENGTH}
@@ -118,13 +112,13 @@ export function RegisterForm() {
         onChange={(event) => setPassword(event.target.value)}
       />
       <PasswordField
-        label="Confirmar contraseña"
+        label={t("auth.confirmPassword")}
         name="passwordConfirmation"
         required
         autoComplete="new-password"
         value={passwordConfirmation}
         onChange={(event) => setPasswordConfirmation(event.target.value)}
-        error={isConfirmationMismatch ? "Las contraseñas no coinciden" : undefined}
+        error={isConfirmationMismatch ? t("auth.passwordsMismatch") : undefined}
       />
       <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-ink/30 px-4 py-3 text-sm text-mist">
         <input
@@ -133,27 +127,24 @@ export function RegisterForm() {
           onChange={(event) => setIsVenueOwner(event.target.checked)}
           className="mt-1 accent-lime"
         />
-        <span>
-          Quiero publicar mi sede (El Cubo, Canchas Dany, etc.). Los jugadores
-          siguen siendo globales.
-        </span>
+        <span>{t("auth.ownerCheckbox")}</span>
       </label>
       {isVenueOwner ? (
         <TextField
-          label="Nombre de tu organización"
+          label={t("auth.organizationName")}
           name="organizationName"
           required
           placeholder="El Cubo"
-          hint="Tus canchas quedarán aisladas de las demás sedes"
+          hint={t("auth.organizationHint")}
         />
       ) : null}
       <Button type="submit" className="w-full" isLoading={isSubmitting}>
-        {isVenueOwner ? "Crear mi sede" : "Crear cuenta y jugar"}
+        {isVenueOwner ? t("auth.createVenue") : t("auth.createAndPlay")}
       </Button>
       <p className="text-center text-sm text-mist">
-        ¿Ya tienes cuenta?{" "}
+        {t("auth.alreadyHaveAccount")}{" "}
         <Link href="/login" className="text-lime hover:underline">
-          Inicia sesión
+          {t("auth.signIn")}
         </Link>
       </p>
     </form>

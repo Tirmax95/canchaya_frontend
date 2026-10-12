@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/core/i18n/provider";
 import {
   formatBillingPeriod,
   formatCommissionBps,
@@ -38,14 +41,16 @@ export function InvoiceTable({
   invoices: TenantInvoice[];
   audience: InvoiceTableAudience;
 }) {
+  const { t, intlLocale } = useI18n();
+  const consultLabel = t("common.consult");
   const showTenant = audience.kind === "platform";
   const headers = [
-    "Factura",
-    ...(showTenant ? ["Tenant"] : []),
-    "Periodo",
-    "Detalle",
-    "Total",
-    "Estado",
+    t("platform.invoiceColumnInvoice"),
+    ...(showTenant ? [t("platform.invoiceColumnTenant")] : []),
+    t("platform.invoiceColumnPeriod"),
+    t("platform.invoiceColumnDetail"),
+    t("platform.invoiceColumnTotal"),
+    t("platform.invoiceColumnStatus"),
     "",
   ];
 
@@ -59,33 +64,54 @@ export function InvoiceTable({
         <tr key={invoice.invoiceId} className="align-top">
           <td className="px-3 py-3">
             <p className="font-mono text-xs text-bone">{invoice.invoiceNumber}</p>
-            <p className="text-[11px] text-mist">Emitida {formatDateTime(invoice.issuedAt)}</p>
+            <p className="text-[11px] text-mist">
+              {t("platform.issuedAtLabel", { date: formatDateTime(invoice.issuedAt, intlLocale) })}
+            </p>
           </td>
           {showTenant ? <td className="px-3 py-3 text-bone">{invoice.organizationName}</td> : null}
-          <td className="px-3 py-3 capitalize text-bone">{formatBillingPeriod(invoice.period)}</td>
+          <td className="px-3 py-3 capitalize text-bone">
+            {formatBillingPeriod(invoice.period, intlLocale)}
+          </td>
           <td className="px-3 py-3 text-xs leading-5 text-mist">
-            Mensualidad {formatMoney(invoice.monthlyFee)}
+            {t("platform.monthlyFeeLine", {
+              amount: formatMoney(invoice.monthlyFee, intlLocale, consultLabel),
+            })}
             <br />
-            Comisión {formatCommissionBps(invoice.commissionBps)} de {formatMoney(invoice.grossBookings)} ={" "}
-            {formatMoney(invoice.commissionAmount)}
+            {t("platform.commissionLine", {
+              percent: formatCommissionBps(invoice.commissionBps, intlLocale),
+              gross: formatMoney(invoice.grossBookings, intlLocale, consultLabel),
+              commission: formatMoney(invoice.commissionAmount, intlLocale, consultLabel),
+            })}
             <br />
-            {invoice.reservationCount} reservas · {invoice.bookedHours} h
+            {t("platform.reservationHours", {
+              count: invoice.reservationCount,
+              hours: invoice.bookedHours,
+            })}
             {invoice.notes ? (
               <>
                 <br />
-                Nota: {invoice.notes}
+                {t("platform.notePrefix", { note: invoice.notes })}
               </>
             ) : null}
           </td>
-          <td className="px-3 py-3 font-semibold text-bone">{formatMoney(invoice.totalAmount)}</td>
+          <td className="px-3 py-3 font-semibold text-bone">
+            {formatMoney(invoice.totalAmount, intlLocale, consultLabel)}
+          </td>
           <td className="px-3 py-3">
             <InvoiceStatusPill status={resolveInvoiceDisplayStatus(invoice)} />
             <p className="mt-1 text-[11px] text-mist">
               {invoice.status === "paid" && invoice.paidAt
-                ? `Pagada ${formatDateTime(invoice.paidAt)} · ${invoice.paymentReference ?? ""}`
+                ? t("platform.paidAtLabel", {
+                    date: formatDateTime(invoice.paidAt, intlLocale),
+                    reference: invoice.paymentReference ?? "",
+                  })
                 : invoice.status === "void"
-                  ? `Motivo: ${invoice.voidReason ?? "—"}`
-                  : `Vence ${formatDateTime(invoice.dueDate)}`}
+                  ? t("platform.voidReasonLine", {
+                      reason: invoice.voidReason ?? t("common.none"),
+                    })
+                  : t("platform.dueAtLabel", {
+                      date: formatDateTime(invoice.dueDate, intlLocale),
+                    })}
             </p>
           </td>
           <td className="px-3 py-3">
@@ -95,7 +121,7 @@ export function InvoiceTable({
                 className="text-xs font-semibold text-lime hover:underline"
                 download
               >
-                Descargar PDF
+                {t("platform.downloadPdf")}
               </a>
               {invoice.status === "issued" && audience.kind === "platform" ? (
                 <InvoiceRowActions invoiceId={invoice.invoiceId} />

@@ -1,9 +1,11 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { PickupMatch, PickupPayment } from "@/domain/pickup";
 import { formatMoney } from "@/shared/lib/money";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
+import { useConfirmAction } from "@/shared/ui/confirm-dialog";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -22,17 +24,18 @@ export function MatchActions({
   pendingPayment?: PickupPayment | null;
 }) {
   const router = useRouter();
+  const { t, intlLocale } = useI18n();
+  const { askConfirmation, confirmationDialog } = useConfirmAction();
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(
-    pendingPayment
-      ? "Tienes un cupo reservado. Confirma el pago para no perderlo."
-      : null,
+    pendingPayment ? t("pickup.infoPendingHold") : null,
   );
   const [isWorking, setIsWorking] = useState(false);
   const [paymentId, setPaymentId] = useState<number | null>(
     pendingPayment?.id ?? null,
   );
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const slotPrice = formatMoney(match.pricePerSlot, intlLocale, t("common.consult"));
 
   /**
    * Propósito: Reserva el cupo 10 minutos y abre checkout. No cobra todavía.
@@ -51,7 +54,7 @@ export function MatchActions({
         message?: string;
       };
       if (!hold.ok) {
-        setError(held.message ?? "No se pudo reservar");
+        setError(held.message ?? t("pickup.reserveFailed"));
         return;
       }
       const checkout = await fetch("/api/pickup/payments", {
@@ -64,18 +67,18 @@ export function MatchActions({
         message?: string;
       };
       if (!checkout.ok || !payload.payment) {
-        setError(payload.message ?? "No se pudo abrir el pago");
+        setError(payload.message ?? t("pickup.openPaymentFailed"));
         return;
       }
       setPaymentId(payload.payment.id);
       setExpiresAt(held.checkout?.expiresAt ?? null);
-      setInfo("Cupo reservado 10 minutos. Confirma el pago para no perderlo.");
+      setInfo(t("pickup.infoReservedHold"));
       /**
        * Output:
        * Side effects — Hold + checkout pending
        */
     } catch {
-      setError("No se pudo reservar. Intenta de nuevo.");
+      setError(t("pickup.reserveFailedRetry"));
     } finally {
       setIsWorking(false);
     }
@@ -98,10 +101,10 @@ export function MatchActions({
       });
       const result = (await approved.json()) as { message?: string };
       if (!approved.ok) {
-        setError(result.message ?? "El pago sandbox falló");
+        setError(result.message ?? t("pickup.sandboxPayFailed"));
         return;
       }
-      setInfo("Cupo pagado. Te esperamos en la cancha.");
+      setInfo(t("pickup.infoSlotPaid"));
       setPaymentId(null);
       router.refresh();
       /**
@@ -109,7 +112,7 @@ export function MatchActions({
        * Side effects — Pago aprobado
        */
     } catch {
-      setError("No se pudo confirmar el pago.");
+      setError(t("pickup.confirmPaymentFailed"));
     } finally {
       setIsWorking(false);
     }
@@ -128,7 +131,7 @@ export function MatchActions({
       );
       const payload = (await response.json()) as { message?: string };
       if (!response.ok) {
-        setError(payload.message ?? "No se pudo actualizar");
+        setError(payload.message ?? t("pickup.updateFailed"));
         return;
       }
       router.refresh();
@@ -137,11 +140,93 @@ export function MatchActions({
        * Side effects — Transición de estado
        */
     } catch {
-      setError("No se pudo actualizar el partido.");
+      setError(t("pickup.updateMatchFailed"));
     } finally {
       setIsWorking(false);
     }
   }
+
+  /**
+   * Propósito: Pide confirmación antes de publicar, confirmar, empezar, cancelar, reservar o cobrar.
+   */
+  function requestMatchDecision(
+    decision: "publish" | "confirm" | "start" | "cancel" | "pay" | "reserve",
+  ) {
+    if (decision === "reserve") {
+      askConfirmation({
+        title: t("pickup.reserveConfirmTitle"),
+        description: t("pickup.reserveConfirmDescription"),
+        confirmLabel: t("pickup.reserveConfirmYes"),
+        tone: "primary",
+        run: reserveSlot,
+      });
+      /**
+       * Output:
+       * Side effects — Abre el modal del cupo
+       */
+      return;
+    }
+
+    if (decision === "pay") {
+      askConfirmation({
+        title: t("pickup.paySlotConfirmTitle"),
+        description: t("pickup.paySlotConfirmDescription", { amount: slotPrice }),
+        confirmLabel: t("pickup.paySlotConfirmYes"),
+        tone: "primary",
+        run: confirmPayment,
+      });
+      /**
+       * Output:
+       * Side effects — Abre el modal del pago
+       */
+      return;
+    }
+
+    const decisionCopy = {
+      publish: {
+        title: t("pickup.publishConfirmTitle"),
+        description: t("pickup.publishConfirmDescription"),
+        confirmLabel: t("pickup.publishConfirmYes"),
+        tone: "primary" as const,
+      },
+      confirm: {
+        title: t("pickup.matchConfirmTitle"),
+        description: t("pickup.matchConfirmDescription"),
+        confirmLabel: t("pickup.matchConfirmYes"),
+        tone: "primary" as const,
+      },
+      start: {
+        title: t("pickup.startConfirmTitle"),
+        description: t("pickup.startConfirmDescription"),
+        confirmLabel: t("pickup.startConfirmYes"),
+        tone: "primary" as const,
+      },
+      cancel: {
+        title: t("pickup.cancelMatchConfirmTitle"),
+        description: t("pickup.cancelMatchConfirmDescription"),
+        confirmLabel: t("pickup.cancelMatchConfirmYes"),
+        tone: "danger" as const,
+      },
+    }[decision];
+
+    askConfirmation({
+      ...decisionCopy,
+      run: () => runAction(decision),
+    });
+    /**
+     * Output:
+     * Side effects — Abre el modal; el partido no cambia hasta aceptar
+     */
+  }
+
+  const holdExpiresLabel = expiresAt
+    ? t("pickup.holdExpiresAt", {
+        time: new Date(expiresAt).toLocaleTimeString(intlLocale, {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      })
+    : null;
 
   /**
    * Output:
@@ -149,62 +234,55 @@ export function MatchActions({
    */
   return (
     <div className="space-y-3">
+      {confirmationDialog}
       {error ? <Alert>{error}</Alert> : null}
       {info ? <p className="text-sm text-lime">{info}</p> : null}
-      {expiresAt ? (
-        <p className="text-xs text-mist">
-          El hold vence a las{" "}
-          {new Date(expiresAt).toLocaleTimeString("es-CO", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
+      {holdExpiresLabel ? (
+        <p className="text-xs text-mist">{holdExpiresLabel}</p>
       ) : null}
       {!isAuthenticated ? (
         <Button onClick={() => router.push("/login")}>
-          Entra para reservar
+          {t("pickup.loginToReserve")}
         </Button>
       ) : isOwner ? (
         <div className="flex flex-wrap gap-2">
           {match.status === "draft" ? (
-            <Button isLoading={isWorking} onClick={() => runAction("publish")}>
-              Publicar
+            <Button isLoading={isWorking} onClick={() => requestMatchDecision("publish")}>
+              {t("pickup.publishBtn")}
             </Button>
           ) : null}
           {match.status === "filled" ? (
-            <Button isLoading={isWorking} onClick={() => runAction("confirm")}>
-              Confirmar
+            <Button isLoading={isWorking} onClick={() => requestMatchDecision("confirm")}>
+              {t("booking.confirm")}
             </Button>
           ) : null}
           {match.status === "confirmed" ? (
-            <Button isLoading={isWorking} onClick={() => runAction("start")}>
-              Empezar
+            <Button isLoading={isWorking} onClick={() => requestMatchDecision("start")}>
+              {t("pickup.startBtn")}
             </Button>
           ) : null}
           {match.status !== "cancelled" && match.status !== "closed" ? (
             <Button
               variant="danger"
               isLoading={isWorking}
-              onClick={() => runAction("cancel")}
+              onClick={() => requestMatchDecision("cancel")}
             >
-              Cancelar
+              {t("booking.cancel")}
             </Button>
           ) : null}
         </div>
       ) : match.status === "open" ? (
         paymentId ? (
-          <Button isLoading={isWorking} onClick={confirmPayment}>
-            Pagar {formatMoney(match.pricePerSlot)}
+          <Button isLoading={isWorking} onClick={() => requestMatchDecision("pay")}>
+            {t("pickup.paySlot", { amount: slotPrice })}
           </Button>
         ) : (
-          <Button isLoading={isWorking} onClick={reserveSlot}>
-            Reservar cupo
+          <Button isLoading={isWorking} onClick={() => requestMatchDecision("reserve")}>
+            {t("pickup.reserveSlot")}
           </Button>
         )
       ) : (
-        <p className="text-sm text-mist">
-          Este partido ya no tiene cupos abiertos.
-        </p>
+        <p className="text-sm text-mist">{t("pickup.noOpenSlots")}</p>
       )}
     </div>
   );

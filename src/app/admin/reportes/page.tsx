@@ -1,4 +1,5 @@
 import { requireSuperAdminAccess } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { getTenantPeriodReport } from "@/data/platform.repository";
 import {
   MAX_REPORT_RANGE_DAYS,
@@ -20,7 +21,17 @@ import { buttonClassName } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Admin · Reportes" };
+/**
+ * Propósito: Metadata de reportes de plataforma.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.reportsMeta") };
+}
 
 const SELECTABLE_PAST_MONTHS = 12;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -33,7 +44,12 @@ export default async function PlatformReportsPage({
 }: {
   searchParams: Promise<{ periodo?: string }>;
 }) {
-  const [, { periodo }] = await Promise.all([requireSuperAdminAccess(), searchParams]);
+  const [{ t, intlLocale }, , { periodo }] = await Promise.all([
+    getTranslator(),
+    requireSuperAdminAccess(),
+    searchParams,
+  ]);
+  const consultLabel = t("common.consult");
   const now = new Date();
   const period = isBillingPeriod(periodo) ? periodo : toBillingPeriod(now);
   const { rows, pickupRevenue } = await getTenantPeriodReport(period);
@@ -56,91 +72,116 @@ export default async function PlatformReportsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Plataforma"
-        title="Reportes"
-        description="Volumen y facturable por tenant, y detalle de reservas de toda la plataforma para exportar."
+        kicker={t("platform.kicker")}
+        title={t("platform.reportsTitle")}
+        description={t("platform.reportsDescription")}
       />
 
       <PanelSection
-        title={`Uso por tenant · ${formatBillingPeriod(period)}`}
+        title={t("platform.usageByTenant", { period: formatBillingPeriod(period, intlLocale) })}
         action={
           <div className="flex flex-wrap items-center gap-2">
             <form method="get" className="flex items-center gap-2">
               <select
                 name="periodo"
                 defaultValue={period}
-                aria-label="Mes del reporte"
+                aria-label={t("platform.reportMonth")}
                 className="rounded-full border border-white/10 bg-ink/40 px-3 py-1.5 text-xs capitalize text-bone"
               >
                 {selectablePeriods.map((selectablePeriod) => (
                   <option key={selectablePeriod} value={selectablePeriod} className="bg-ink">
-                    {formatBillingPeriod(selectablePeriod)}
+                    {formatBillingPeriod(selectablePeriod, intlLocale)}
                   </option>
                 ))}
               </select>
               <button type="submit" className={buttonClassName("secondary", "px-3 py-1.5 text-xs")}>
-                Ver
+                {t("platform.view")}
               </button>
             </form>
             <a
               href={`/api/platform/reports/tenants?period=${period}`}
               className={buttonClassName("primary", "px-3 py-1.5 text-xs")}
             >
-              Descargar CSV
+              {t("platform.downloadCsv")}
             </a>
           </div>
         }
       >
-        <DataTable headers={["Tenant", "Reservas", "Reservado", "Plan", "Comisión", "Total a facturar", "Factura"]}>
+        <DataTable
+          headers={[
+            t("platform.reportColumnTenant"),
+            t("platform.reportColumnReservations"),
+            t("platform.reportColumnBooked"),
+            t("platform.reportColumnPlan"),
+            t("platform.reportColumnCommission"),
+            t("platform.reportColumnBillable"),
+            t("platform.reportColumnInvoice"),
+          ]}
+        >
           {rows.map((row) => (
             <tr key={row.organizationId}>
               <td className="px-3 py-3">
                 <span className="text-bone">{row.name}</span>{" "}
-                {row.status === "suspended" ? <StatusPill tone="danger">Suspendido</StatusPill> : null}
+                {row.status === "suspended" ? (
+                  <StatusPill tone="danger">{t("labels.tenantSuspended")}</StatusPill>
+                ) : null}
               </td>
               <td className="px-3 py-3 text-mist">
-                {row.reservationCount} · {row.bookedHours} h
+                {t("platform.hoursBookedShort", {
+                  count: row.reservationCount,
+                  hours: row.bookedHours,
+                })}
               </td>
-              <td className="px-3 py-3 text-bone">{formatMoney(row.grossBookings)}</td>
+              <td className="px-3 py-3 text-bone">
+                {formatMoney(row.grossBookings, intlLocale, consultLabel)}
+              </td>
               <td className="px-3 py-3 text-xs text-mist">
-                {formatMoney(row.monthlyFee)} + {formatCommissionBps(row.commissionBps)}
+                {formatMoney(row.monthlyFee, intlLocale, consultLabel)} +{" "}
+                {formatCommissionBps(row.commissionBps, intlLocale)}
               </td>
-              <td className="px-3 py-3 text-mist">{formatMoney(row.commissionAmount)}</td>
-              <td className="px-3 py-3 font-semibold text-bone">{formatMoney(row.totalAmount)}</td>
+              <td className="px-3 py-3 text-mist">
+                {formatMoney(row.commissionAmount, intlLocale, consultLabel)}
+              </td>
+              <td className="px-3 py-3 font-semibold text-bone">
+                {formatMoney(row.totalAmount, intlLocale, consultLabel)}
+              </td>
               <td className="px-3 py-3">
                 {row.invoiceStatus ? (
                   <InvoiceStatusPill status={row.invoiceStatus} />
                 ) : (
-                  <span className="text-xs text-mist">Sin emitir</span>
+                  <span className="text-xs text-mist">{t("platform.notIssued")}</span>
                 )}
               </td>
             </tr>
           ))}
           <tr className="border-t border-white/10 font-semibold">
-            <td className="px-3 py-3 text-bone">Total</td>
+            <td className="px-3 py-3 text-bone">{t("platform.totalRow")}</td>
             <td className="px-3 py-3 text-bone">{totals.reservations}</td>
-            <td className="px-3 py-3 text-bone">{formatMoney(totals.gross)}</td>
+            <td className="px-3 py-3 text-bone">{formatMoney(totals.gross, intlLocale, consultLabel)}</td>
             <td />
             <td />
-            <td className="px-3 py-3 text-lime">{formatMoney(totals.billable)}</td>
+            <td className="px-3 py-3 text-lime">{formatMoney(totals.billable, intlLocale, consultLabel)}</td>
             <td />
           </tr>
         </DataTable>
         <p className="mt-3 text-xs text-mist">
-          Solo cuentan reservas confirmadas o jugadas. El valor usa la tarifa por hora actual de cada cancha.
+          {t("platform.reportConfirmedHint")}
         </p>
       </PanelSection>
 
-      <PickupRevenueStats pickupRevenue={pickupRevenue} periodLabel={formatBillingPeriod(period)} />
+      <PickupRevenueStats
+        pickupRevenue={pickupRevenue}
+        periodLabel={formatBillingPeriod(period, intlLocale)}
+      />
 
-      <PanelSection title="Exportar reservas">
+      <PanelSection title={t("platform.exportReservationsSection")}>
         <form
           method="get"
           action="/api/platform/reports/reservations"
           className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
         >
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-mist">Desde</span>
+            <span className="text-sm font-medium text-mist">{t("platform.fromDate")}</span>
             <input
               type="date"
               name="from"
@@ -150,7 +191,7 @@ export default async function PlatformReportsPage({
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-mist">Hasta (incluido)</span>
+            <span className="text-sm font-medium text-mist">{t("platform.untilInclusive")}</span>
             <input
               type="date"
               name="to"
@@ -160,11 +201,11 @@ export default async function PlatformReportsPage({
             />
           </label>
           <button type="submit" className={buttonClassName("primary")}>
-            Descargar CSV
+            {t("platform.downloadCsv")}
           </button>
         </form>
         <p className="mt-3 text-xs text-mist">
-          Máximo {MAX_REPORT_RANGE_DAYS} días por descarga y 5.000 filas. Incluye todas las reservas, de todos los estados.
+          {t("platform.exportRangeHint", { days: MAX_REPORT_RANGE_DAYS })}
         </p>
       </PanelSection>
     </div>

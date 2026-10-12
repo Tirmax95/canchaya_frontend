@@ -1,15 +1,26 @@
 import { TENANT_BILLING_PATH, getAdminAccess } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { EmptyState } from "@/shared/ui/empty-state";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Admin · Sin módulos" };
+/**
+ * Propósito: Metadata cuando el tenant no tiene módulos operables.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.sinModulosMeta") };
+}
 
 /**
  * Propósito: Destino cuando el tenant no tiene módulos operables: suspendido o sin módulos habilitados.
  */
 export default async function NoModulesPage() {
-  const access = await getAdminAccess();
+  const [{ t }, access] = await Promise.all([getTranslator(), getAdminAccess()]);
   const isSuspended = access.suspendedTenants.length > 0;
 
   /**
@@ -18,16 +29,18 @@ export default async function NoModulesPage() {
    */
   return (
     <EmptyState
-      title={isSuspended ? "Tu cuenta está suspendida" : "Sin módulos habilitados"}
+      title={
+        isSuspended ? t("admin.suspendedEmptyTitle") : t("admin.noModulesEmptyTitle")
+      }
       description={
         isSuspended
-          ? "Mientras la suspensión esté activa no puedes operar tus sedes. Revisa tus facturas pendientes o contacta al equipo de CanchaYa."
-          : "Tu organización aún no tiene módulos activos en el panel. Contacta al administrador de CanchaYa para habilitarlos."
+          ? t("admin.suspendedEmptyDescription")
+          : t("admin.noModulesEmptyDescription")
       }
       action={
         isSuspended && access.isTenantOwner ? (
           <Link href={TENANT_BILLING_PATH} className="text-lime hover:underline">
-            Ver mis facturas
+            {t("admin.seeInvoices")}
           </Link>
         ) : undefined
       }

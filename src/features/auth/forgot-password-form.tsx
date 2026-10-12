@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { TextField } from "@/shared/ui/input";
@@ -10,6 +11,7 @@ import { useState } from "react";
  * Propósito: Pide el enlace de restablecimiento. El mensaje es igual exista o no la cuenta.
  */
 export function ForgotPasswordForm() {
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,14 +32,14 @@ export function ForgotPasswordForm() {
     const payload = (await response.json().catch(() => ({}))) as { message?: string };
     setIsSubmitting(false);
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo enviar el enlace");
+      setError(payload.message ?? t("auth.forgotFailed"));
       /**
        * Output:
        * Side effects — Muestra el error (validación o límite de intentos)
        */
       return;
     }
-    setConfirmation(payload.message ?? "Revisa tu correo.");
+    setConfirmation(payload.message ?? t("auth.resetSent"));
     /**
      * Output:
      * Side effects — Muestra la confirmación neutra
@@ -52,11 +54,9 @@ export function ForgotPasswordForm() {
     return (
       <div className="space-y-5">
         <Alert tone="info">{confirmation}</Alert>
-        <p className="text-sm text-mist">
-          El enlace vence en 30 minutos. Revisa también la carpeta de spam.
-        </p>
+        <p className="text-sm text-mist">{t("auth.resetLinkExpiryHint")}</p>
         <Link href="/login" className="text-sm text-lime hover:underline">
-          Volver a iniciar sesión
+          {t("auth.backToLogin")}
         </Link>
       </div>
     );
@@ -70,7 +70,7 @@ export function ForgotPasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
       <TextField
-        label="Correo de tu cuenta"
+        label={t("auth.accountEmail")}
         name="email"
         type="email"
         autoComplete="email"
@@ -78,11 +78,11 @@ export function ForgotPasswordForm() {
         placeholder="tu@correo.com"
       />
       <Button type="submit" className="w-full" isLoading={isSubmitting}>
-        Enviarme el enlace
+        {t("auth.sendResetLink")}
       </Button>
       <p className="text-center text-sm text-mist">
         <Link href="/login" className="text-lime hover:underline">
-          Volver a iniciar sesión
+          {t("auth.backToLogin")}
         </Link>
       </p>
     </form>

@@ -1,6 +1,7 @@
 "use client";
 
-import { getPasswordPolicyViolation } from "@/domain/password-policy";
+import { useI18n } from "@/core/i18n/provider";
+import { translatePasswordPolicyViolation } from "@/core/i18n/password-messages";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { PasswordField } from "@/shared/ui/password-field";
@@ -13,6 +14,7 @@ import { useState } from "react";
  */
 export function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [password, setPassword] = useState("");
@@ -26,8 +28,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const passwordViolation =
-      getPasswordPolicyViolation(password) ??
-      (password !== passwordConfirmation ? "Las contraseñas no coinciden" : null);
+      translatePasswordPolicyViolation(password, t) ??
+      (password !== passwordConfirmation ? t("auth.passwordsMismatch") : null);
     if (passwordViolation) {
       setError(passwordViolation);
       /**
@@ -45,7 +47,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     });
     const payload = (await response.json().catch(() => ({}))) as { message?: string };
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo cambiar la contraseña");
+      setError(payload.message ?? t("auth.resetFailed"));
       setIsSubmitting(false);
       /**
        * Output:
@@ -70,15 +72,15 @@ export function ResetPasswordForm({ token }: { token: string }) {
       {error ? (
         <Alert>
           {error}{" "}
-          {error.includes("enlace") ? (
+          {error.includes("enlace") || error.toLowerCase().includes("link") ? (
             <Link href="/recuperar" className="underline">
-              Pedir otro enlace
+              {t("auth.requestNewLink")}
             </Link>
           ) : null}
         </Alert>
       ) : null}
       <PasswordField
-        label="Contraseña nueva"
+        label={t("auth.newPassword")}
         name="password"
         autoComplete="new-password"
         required
@@ -87,16 +89,16 @@ export function ResetPasswordForm({ token }: { token: string }) {
         onChange={(event) => setPassword(event.target.value)}
       />
       <PasswordField
-        label="Repite la contraseña"
+        label={t("auth.repeatPassword")}
         name="passwordConfirmation"
         autoComplete="new-password"
         required
         value={passwordConfirmation}
         onChange={(event) => setPasswordConfirmation(event.target.value)}
-        error={isConfirmationMismatch ? "Las contraseñas no coinciden" : undefined}
+        error={isConfirmationMismatch ? t("auth.passwordsMismatch") : undefined}
       />
       <Button type="submit" className="w-full" isLoading={isSubmitting}>
-        Guardar contraseña
+        {t("auth.savePassword")}
       </Button>
     </form>
   );

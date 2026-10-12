@@ -1,7 +1,9 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { TenantModule } from "@/domain/tenant-modules";
 import { cn } from "@/shared/lib/cn";
+import { useConfirmAction } from "@/shared/ui/confirm-dialog";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,8 +18,10 @@ export type AdminMenuIcon =
   | "users"
   | "reports"
   | "audit"
+  | "logs"
   | "emails"
-  | "team";
+  | "team"
+  | "payments";
 
 export interface AdminMenuItem {
   href: string;
@@ -36,9 +40,25 @@ const MENU_ICON_PATHS: Record<AdminMenuIcon, string> = {
   users: "M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm13 9v-1a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74",
   reports: "M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5Zm0 0v5h5M9 17v-3m3 3v-6m3 6v-2",
   audit: "M12 8v4l3 2M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5",
+  logs: "M10 7h9M10 12h9M10 17h6",
   emails: "M4 6h16v12H4V6Zm0 0 8 7 8-7",
   team: "M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1m7-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm9-1v6m3-3h-6",
+  payments: "M4 9h16v10H4V9Zm3-4h10l2 4H5l2-4Zm5 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z",
 };
+
+const FALLBACK_MENU_ICON_PATH = "M4 6h16M4 12h16M4 18h10";
+
+/**
+ * Propósito: Resuelve el trazo del ícono del menú. Si falta la clave, usa un listado
+ * genérico para que el ítem nunca quede en blanco.
+ */
+function menuIconPath(icon: AdminMenuIcon): string {
+  /**
+   * Output:
+   * @returns string — Atributo `d` del SVG
+   */
+  return MENU_ICON_PATHS[icon] || FALLBACK_MENU_ICON_PATH;
+}
 
 /**
  * Propósito: True si el ítem corresponde a la ruta actual. El dashboard solo coincide exacto
@@ -75,6 +95,7 @@ export function AdminShell({
   isReadOnly: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const isDashboard = pathname === ADMIN_HOME_PATH;
   const allMenuItems = [...moduleMenuItems, ...accountMenuItems];
@@ -89,26 +110,24 @@ export function AdminShell({
         <div className="sticky top-6 space-y-6 rounded-[28px] border border-white/8 bg-pitch/60 p-4">
           <div className="px-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-lime">
-              Panel
+              {t("admin.panel")}
             </p>
             <p className="mt-1 truncate font-display text-lg text-bone" title={workspaceLabel}>
               {workspaceLabel}
             </p>
           </div>
 
-          <MenuSection title="Módulos" items={moduleMenuItems} pathname={pathname} />
+          <MenuSection title={t("admin.modules")} items={moduleMenuItems} pathname={pathname} />
           <MenuSection title={accountMenuTitle} items={accountMenuItems} pathname={pathname} />
           {allMenuItems.length === 0 ? (
-            <p className="px-2 text-xs leading-5 text-mist">
-              Tu organización aún no tiene módulos habilitados.
-            </p>
+            <p className="px-2 text-xs leading-5 text-mist">{t("admin.noModules")}</p>
           ) : null}
         </div>
       </aside>
 
       <div className="min-w-0 flex-1">
         <nav
-          aria-label="Menú del panel"
+          aria-label={t("admin.menuLabel")}
           className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:hidden"
         >
           {allMenuItems.map((item) => (
@@ -127,9 +146,8 @@ export function AdminShell({
             role="status"
             className="mb-4 rounded-2xl border border-lime/30 bg-lime/8 px-4 py-3 text-sm text-bone"
           >
-            <strong className="font-semibold">{tenantName} está pendiente de aprobación.</strong>{" "}
-            Ya puedes crear tus sedes y canchas; aparecerán al público cuando CanchaYa apruebe tu
-            cuenta.
+            <strong className="font-semibold">{t("admin.pendingApproval", { name: tenantName })}</strong>{" "}
+            {t("admin.pendingApprovalBody")}
           </div>
         ))}
         {suspendedTenants.map((tenant) => (
@@ -138,9 +156,11 @@ export function AdminShell({
             role="alert"
             className="mb-4 rounded-2xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-bone"
           >
-            <strong className="font-semibold">{tenant.organizationName} está suspendido.</strong>{" "}
-            Sus sedes no aparecen al público y no recibe reservas nuevas.
-            {tenant.reason ? <> Motivo: {tenant.reason}.</> : null}
+            <strong className="font-semibold">
+              {t("admin.suspended", { name: tenant.organizationName })}
+            </strong>{" "}
+            {t("admin.suspendedBody")}
+            {tenant.reason ? <> {t("admin.reason", { reason: tenant.reason })}</> : null}
           </div>
         ))}
         <div className={cn(!isDashboard && "mx-auto max-w-6xl py-4")}>{children}</div>
@@ -154,7 +174,9 @@ export function AdminShell({
  * super admin.
  */
 function ReadOnlyBanner({ workspaceLabel }: { workspaceLabel: string }) {
+  const { t } = useI18n();
   const router = useRouter();
+  const { askConfirmation, confirmationDialog } = useConfirmAction();
   const [isLeaving, setIsLeaving] = useState(false);
 
   /**
@@ -173,6 +195,23 @@ function ReadOnlyBanner({ workspaceLabel }: { workspaceLabel: string }) {
   }
 
   /**
+   * Propósito: Pide confirmación antes de dejar la vista de solo lectura.
+   */
+  function requestExit() {
+    askConfirmation({
+      title: t("admin.impersonationTitle"),
+      description: t("admin.impersonationDescription"),
+      confirmLabel: t("admin.impersonationConfirm"),
+      tone: "primary",
+      run: leaveImpersonation,
+    });
+    /**
+     * Output:
+     * Side effects — Abre el modal; la vista de solo lectura sigue hasta aceptar
+     */
+  }
+
+  /**
    * Output:
    * @returns JSX.Element — Banner de solo lectura
    */
@@ -181,17 +220,18 @@ function ReadOnlyBanner({ workspaceLabel }: { workspaceLabel: string }) {
       role="status"
       className="sticky top-2 z-30 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-flare/50 bg-flare/15 px-4 py-3 text-sm text-bone backdrop-blur"
     >
+      {confirmationDialog}
       <span>
-        <strong className="font-semibold">Viendo como {workspaceLabel}.</strong> Es solo
-        lectura: cualquier cambio se bloquea. La vista se cierra sola en 30 minutos.
+        <strong className="font-semibold">{t("admin.viewingAs", { name: workspaceLabel })}</strong>{" "}
+        {t("admin.readOnlyHint")}
       </span>
       <button
         type="button"
         disabled={isLeaving}
-        onClick={() => void leaveImpersonation()}
+        onClick={requestExit}
         className="rounded-full bg-bone px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-white disabled:opacity-60"
       >
-        {isLeaving ? "Saliendo…" : "Salir"}
+        {isLeaving ? t("admin.leaving") : t("admin.exit")}
       </button>
     </div>
   );
@@ -233,6 +273,44 @@ function MenuSection({
 }
 
 /**
+ * Propósito: Glifo del ítem del sidebar. Logs usa puntos rellenos + líneas: el path de
+ * documento con arcos no se pintaba a 18px con fill none.
+ */
+function MenuIcon({ icon }: { icon: AdminMenuIcon }) {
+  /**
+   * Output:
+   * @returns JSX.Element — SVG 18×18 con stroke currentColor
+   */
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width={18}
+      height={18}
+      className="size-[18px] min-h-[18px] min-w-[18px] shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {icon === "logs" ? (
+        <>
+          <circle cx="5" cy="7" r="1.35" fill="currentColor" stroke="none" />
+          <circle cx="5" cy="12" r="1.35" fill="currentColor" stroke="none" />
+          <circle cx="5" cy="17" r="1.35" fill="currentColor" stroke="none" />
+          <path d="M10 7h9" />
+          <path d="M10 12h9" />
+          <path d="M10 17h6" />
+        </>
+      ) : (
+        <path d={menuIconPath(icon)} />
+      )}
+    </svg>
+  );
+}
+
+/**
  * Propósito: Enlace del menú con ícono; versión compacta tipo chip para móvil.
  */
 function MenuLink({
@@ -266,18 +344,7 @@ function MenuLink({
             : "text-mist hover:bg-white/5 hover:text-bone",
       )}
     >
-      <svg
-        aria-hidden
-        viewBox="0 0 24 24"
-        className="size-[18px] shrink-0"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d={MENU_ICON_PATHS[item.icon]} />
-      </svg>
+      <MenuIcon icon={item.icon} />
       <span className="whitespace-nowrap">{item.label}</span>
     </Link>
   );

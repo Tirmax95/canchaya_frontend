@@ -87,6 +87,7 @@ export interface PlatformTenant {
   grossLast30Days: number;
   outstandingAmount: number;
   overdueCount: number;
+  onlinePaymentsEnabled: boolean;
 }
 
 export interface PlatformUser {
@@ -251,21 +252,26 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "tenant.suspended": "Suspendió un tenant",
   "tenant.reactivated": "Reactivó un tenant",
   "tenant.billing_updated": "Cambió el plan de cobro",
+  "tenant.online_payments_toggled": "Encendió o apagó el cobro en línea de un tenant",
   "tenant.modules_updated": "Cambió módulos",
   "invoice.issued": "Emitió una factura",
   "invoice.paid": "Registró un pago",
   "invoice.voided": "Anuló una factura",
+  "payment_gateway.updated": "Actualizó una pasarela de pago",
+  "payment_gateway.credentials_updated": "Actualizó llaves de una pasarela",
+  "payment_method.toggled": "Encendió o apagó un medio de pago",
+  "payment_intent.settled": "Confirmó un pago manual",
 };
 
 /**
  * Propósito: Convierte puntos básicos a porcentaje legible (250 → "2,5 %").
  */
-export function formatCommissionBps(commissionBps: number): string {
+export function formatCommissionBps(commissionBps: number, locale = "es-CO"): string {
   /**
    * Output:
    * @returns string — Porcentaje con hasta 2 decimales
    */
-  return `${(commissionBps / 100).toLocaleString("es-CO", { maximumFractionDigits: 2 })} %`;
+  return `${(commissionBps / 100).toLocaleString(locale, { maximumFractionDigits: 2 })} %`;
 }
 
 /**
@@ -306,13 +312,13 @@ export function isBillingPeriod(value: unknown): value is string {
 /**
  * Propósito: Nombre legible de un periodo ("octubre de 2026").
  */
-export function formatBillingPeriod(period: string): string {
+export function formatBillingPeriod(period: string, locale = "es-CO"): string {
   const [year, month] = period.split("-").map(Number);
   /**
    * Output:
-   * @returns string — Mes y año en español
+   * @returns string — Mes y año localizados
    */
-  return new Date(Date.UTC(year, month - 1, 15)).toLocaleDateString("es-CO", {
+  return new Date(Date.UTC(year, month - 1, 15)).toLocaleDateString(locale, {
     month: "long",
     year: "numeric",
     timeZone: "UTC",

@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
+import type { MessageKey } from "@/core/i18n/messages";
 import { BOGOTA } from "@/domain/pickup";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
@@ -7,11 +9,19 @@ import { TextField } from "@/shared/ui/input";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const SKILL_LEVEL_KEYS: Record<string, MessageKey> = {
+  novato: "pickup.skillNovice",
+  amateur: "pickup.skillAmateur",
+  competitivo: "pickup.skillCompetitive",
+  elite: "pickup.skillElite",
+};
+
 /**
  * Propósito: Convoca un partido draft y lo publica en un solo flujo.
  */
 export function CreateMatchForm() {
   const router = useRouter();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,7 +56,7 @@ export function CreateMatchForm() {
     };
     if (!create.ok || !created.match) {
       setIsSubmitting(false);
-      setError(created.message ?? "No se pudo convocar");
+      setError(created.message ?? t("pickup.createError"));
       return;
     }
     await fetch(`/api/pickup/matches/${created.match.id}?action=publish`, {
@@ -68,18 +78,18 @@ export function CreateMatchForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       {error ? <Alert>{error}</Alert> : null}
       <TextField
-        label="Cancha o punto de encuentro"
+        label={t("pickup.venue")}
         name="venueText"
         required
-        placeholder="Parque El Virrey, cancha 2"
+        placeholder={t("pickup.venuePlaceholder")}
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField label="Fecha" name="date" type="date" required />
-        <TextField label="Hora" name="time" type="time" required />
+        <TextField label={t("pickup.date")} name="date" type="date" required />
+        <TextField label={t("pickup.time")} name="time" type="time" required />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
-          label="Cupos"
+          label={t("pickup.slots")}
           name="totalSlots"
           type="number"
           min={2}
@@ -88,7 +98,7 @@ export function CreateMatchForm() {
           required
         />
         <TextField
-          label="Precio por cupo (COP)"
+          label={t("pickup.pricePerSlot")}
           name="pricePerSlot"
           type="number"
           min={0}
@@ -97,22 +107,23 @@ export function CreateMatchForm() {
         />
       </div>
       <label className="block space-y-1.5">
-        <span className="text-sm font-medium text-mist">Nivel</span>
+        <span className="text-sm font-medium text-mist">{t("pickup.skillLevel")}</span>
         <select
           name="skillLevel"
           defaultValue="amateur"
           className="w-full rounded-2xl border border-white/10 bg-ink/40 px-4 py-3 text-bone"
         >
-          <option value="novato">Novato</option>
-          <option value="amateur">Amateur</option>
-          <option value="competitivo">Competitivo</option>
-          <option value="elite">Elite</option>
+          {Object.entries(SKILL_LEVEL_KEYS).map(([value, key]) => (
+            <option key={value} value={value}>
+              {t(key)}
+            </option>
+          ))}
         </select>
       </label>
       <input type="hidden" name="lat" defaultValue={BOGOTA.lat} />
       <input type="hidden" name="lng" defaultValue={BOGOTA.lng} />
       <Button type="submit" isLoading={isSubmitting}>
-        Publicar partido
+        {t("pickup.publish")}
       </Button>
     </form>
   );

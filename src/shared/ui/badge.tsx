@@ -1,3 +1,7 @@
+"use client";
+
+import { RESERVATION_STATUS_KEYS } from "@/core/i18n/label-keys";
+import { useI18n } from "@/core/i18n/provider";
 import { cn } from "@/shared/lib/cn";
 import type { ReservationStatus } from "@/domain/reservation";
 
@@ -8,17 +12,11 @@ const statusStyles: Record<ReservationStatus, string> = {
   cancelled: "bg-danger/15 text-danger",
 };
 
-const statusLabels: Record<ReservationStatus, string> = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-};
-
 /**
- * Propósito: Badge de estado de reserva con copy en español.
+ * Propósito: Badge de estado de reserva con copy localizado.
  */
 export function StatusBadge({ status }: { status: ReservationStatus }) {
+  const { t } = useI18n();
   /**
    * Output:
    * @returns JSX.Element — Chip de estado
@@ -30,7 +28,7 @@ export function StatusBadge({ status }: { status: ReservationStatus }) {
         statusStyles[status],
       )}
     >
-      {statusLabels[status]}
+      {t(RESERVATION_STATUS_KEYS[status])}
     </span>
   );
 }

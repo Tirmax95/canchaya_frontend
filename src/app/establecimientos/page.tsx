@@ -1,6 +1,7 @@
 import { getVisibleEstablishmentCatalog } from "@/application/catalog";
 import { shouldSeeOnlyOwnedVenues } from "@/core/auth/roles";
 import { getSession } from "@/core/auth/session";
+import { getTranslator } from "@/core/i18n/get-locale";
 import type { EstablishmentCatalogItem } from "@/domain/establishment";
 import { CatalogSearch } from "@/features/catalog/catalog-search";
 import { EstablishmentCard } from "@/features/catalog/establishment-card";
@@ -17,7 +18,11 @@ export default async function EstablishmentsPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const [{ q }, session] = await Promise.all([searchParams, getSession()]);
+  const [{ t }, { q }, session] = await Promise.all([
+    getTranslator(),
+    searchParams,
+    getSession(),
+  ]);
   const isOwnerCatalog = shouldSeeOnlyOwnedVenues(session);
   let error: string | null = null;
   let establishments: EstablishmentCatalogItem[] = [];
@@ -26,12 +31,10 @@ export default async function EstablishmentsPage({
     const catalog = await getVisibleEstablishmentCatalog();
     const query = q?.trim().toLowerCase() ?? "";
     establishments = query
-      ? catalog.filter((item) =>
-          `${item.name} ${item.address}`.toLowerCase().includes(query),
-        )
+      ? catalog.filter((item) => `${item.name} ${item.address}`.toLowerCase().includes(query))
       : catalog;
   } catch {
-    error = "No pudimos cargar las sedes. ¿Está el backend en marcha?";
+    error = t("catalog.venuesLoadError");
   }
 
   /**
@@ -41,30 +44,25 @@ export default async function EstablishmentsPage({
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-12 sm:px-6">
       <PageHeader
-        kicker="Sedes"
-        title={isOwnerCatalog ? "Tus sedes" : "Elige dónde jugar"}
+        kicker={t("catalog.venuesKicker")}
+        title={isOwnerCatalog ? t("catalog.venuesTitleOwner") : t("catalog.venuesTitle")}
         description={
-          isOwnerCatalog
-            ? "Solo ves los establecimientos de tu organización."
-            : "Complejos con canchas publicadas y precio desde."
+          isOwnerCatalog ? t("catalog.venuesDescriptionOwner") : t("catalog.venuesDescription")
         }
       />
       <Suspense>
-        <CatalogSearch placeholder="Busca por nombre o dirección" />
+        <CatalogSearch placeholder={t("catalog.venuesSearch")} />
       </Suspense>
       {error ? <Alert>{error}</Alert> : null}
       {!error && establishments.length === 0 ? (
         <EmptyState
-          title="No hay sedes todavía"
-          description="Cuando un administrador publique un establecimiento, aparecerá aquí."
+          title={t("catalog.venuesEmptyTitle")}
+          description={t("catalog.venuesEmptyDescription")}
         />
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {establishments.map((establishment) => (
-            <EstablishmentCard
-              key={establishment.establishmentId}
-              establishment={establishment}
-            />
+            <EstablishmentCard key={establishment.establishmentId} establishment={establishment} />
           ))}
         </div>
       )}

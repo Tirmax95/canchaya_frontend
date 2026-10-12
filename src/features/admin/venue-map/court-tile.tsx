@@ -1,3 +1,8 @@
+"use client";
+
+import { useI18n } from "@/core/i18n/provider";
+import { COURT_STATUS_KEYS } from "@/core/i18n/label-keys";
+import type { TranslateFn } from "@/core/i18n/translate";
 import { formatHourOfDay, isCourtOccupied, toLocalHourOfDay, type CourtSnapshot } from "@/domain/venue-occupancy";
 import type { VenueMapField } from "@/application/venue-map";
 import { cn } from "@/shared/lib/cn";
@@ -83,7 +88,9 @@ export function CourtTile({
   isSelected: boolean;
   onSelect: (fieldId: number) => void;
 }) {
+  const { t } = useI18n();
   const presentation = COURT_STATUS_PRESENTATION[snapshot.status];
+  const statusLabel = t(COURT_STATUS_KEYS[snapshot.status]);
   const isOccupied = isCourtOccupied(snapshot);
   const areLightsOn = isOccupied || snapshot.status === "starting_soon";
   const goalDepth = depth * 0.26;
@@ -203,9 +210,11 @@ export function CourtTile({
         <Upright x="50%" y="50%" lift={34}>
           <div className="animate-iso-pin flex flex-col items-center">
             <div className="whitespace-nowrap rounded-xl bg-bone px-3 py-1.5 text-center text-ink shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
-              <p className="text-[11px] font-bold leading-tight">Cancha {field.numberField}</p>
+              <p className="text-[11px] font-bold leading-tight">
+                {t("venueMap.courtHeading", { number: field.numberField })}
+              </p>
               <p className="text-[10px] leading-tight text-ink/70">
-                {describeSnapshotForPin(snapshot)}
+                {describeSnapshotForPin(snapshot, t, statusLabel)}
               </p>
             </div>
             <div className="size-0 border-x-[6px] border-t-[8px] border-x-transparent border-t-bone" />
@@ -216,7 +225,7 @@ export function CourtTile({
       <button
         type="button"
         onClick={() => onSelect(field.id)}
-        aria-label={`Cancha ${field.numberField}: ${presentation.label}`}
+        aria-label={t("venueMap.courtStatus", { number: field.numberField, status: statusLabel })}
         aria-pressed={isSelected}
         className="absolute inset-0 cursor-pointer rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-lime"
         style={{ transform: "translateZ(1px)" }}
@@ -228,28 +237,33 @@ export function CourtTile({
 /**
  * Propósito: Texto corto del pin según el estado de la cancha.
  */
-function describeSnapshotForPin(snapshot: CourtSnapshot): string {
+function describeSnapshotForPin(
+  snapshot: CourtSnapshot,
+  t: TranslateFn,
+  statusLabel: string,
+): string {
   if (snapshot.currentReservation) {
     /**
      * Output:
      * @returns string — Estado y hora de fin del partido en curso
      */
-    return `${COURT_STATUS_PRESENTATION[snapshot.status].label} · hasta ${formatHourOfDay(
-      toLocalHourOfDay(snapshot.currentReservation.endTime),
-    )}`;
+    return t("venueMap.inPlayUntil", {
+      status: statusLabel,
+      hour: formatHourOfDay(toLocalHourOfDay(snapshot.currentReservation.endTime)),
+    });
   }
   if (snapshot.nextReservation) {
     /**
      * Output:
      * @returns string — Libre con la próxima hora reservada
      */
-    return `Libre · próxima ${formatHourOfDay(
-      toLocalHourOfDay(snapshot.nextReservation.startTime),
-    )}`;
+    return t("venueMap.freeNext", {
+      hour: formatHourOfDay(toLocalHourOfDay(snapshot.nextReservation.startTime)),
+    });
   }
   /**
    * Output:
    * @returns string — Libre el resto del día
    */
-  return "Libre el resto del día";
+  return t("venueMap.freeRestOfDay");
 }

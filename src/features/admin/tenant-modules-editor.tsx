@@ -1,11 +1,20 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
+import { translateTenantModuleLabel } from "@/core/i18n/label-keys";
+import type { MessageKey } from "@/core/i18n/messages";
 import {
-  TENANT_MODULE_DEFINITIONS,
   TENANT_MODULES,
   normalizeTenantModules,
   type TenantModule,
 } from "@/domain/tenant-modules";
+
+const TENANT_MODULE_HINT_KEYS: Record<TenantModule, MessageKey> = {
+  dashboard: "admin.moduleDashboardHint",
+  establishments: "admin.moduleVenuesHint",
+  fields: "admin.moduleCourtsHint",
+  reservations: "admin.moduleReservationsHint",
+};
 import { usePlatformMutation } from "@/features/admin/platform/use-platform-mutation";
 import { cn } from "@/shared/lib/cn";
 import { Alert } from "@/shared/ui/alert";
@@ -22,6 +31,7 @@ export function TenantModulesForm({
   organizationId: number;
   initialModules: string[];
 }) {
+  const { t } = useI18n();
   const { runMutation, pendingActionKey, errorMessage } = usePlatformMutation();
   const [savedModules, setSavedModules] = useState<TenantModule[]>(() =>
     normalizeTenantModules(initialModules),
@@ -73,7 +83,6 @@ export function TenantModulesForm({
       <div className="grid gap-2 sm:grid-cols-2">
         {TENANT_MODULES.map((tenantModule) => {
           const isEnabled = draftModules.includes(tenantModule);
-          const definition = TENANT_MODULE_DEFINITIONS[tenantModule];
           return (
             <button
               key={tenantModule}
@@ -103,8 +112,12 @@ export function TenantModulesForm({
                 />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-bone">{definition.label}</span>
-                <span className="block text-xs leading-5 text-mist">{definition.description}</span>
+                <span className="block text-sm font-semibold text-bone">
+                  {translateTenantModuleLabel(t, tenantModule)}
+                </span>
+                <span className="block text-xs leading-5 text-mist">
+                  {t(TENANT_MODULE_HINT_KEYS[tenantModule])}
+                </span>
               </span>
             </button>
           );
@@ -117,7 +130,7 @@ export function TenantModulesForm({
           isLoading={pendingActionKey === "modules"}
           className="px-4 py-2 text-xs"
         >
-          Guardar módulos
+          {t("admin.saveModules")}
         </Button>
       </div>
     </div>

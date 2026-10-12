@@ -3,6 +3,7 @@ import {
   filterFieldsByEstablishment,
   getVisibleFieldCatalog,
 } from "@/application/catalog";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { getEstablishmentById } from "@/data/establishment.repository";
 import { FieldCard } from "@/features/catalog/field-card";
 import { isSafeHttpUrl } from "@/shared/lib/url";
@@ -11,7 +12,17 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = { title: "Sede" };
+/**
+ * Propósito: Título genérico de sede según el idioma activo.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("common.unknownVenue") };
+}
 
 /**
  * Propósito: Detalle de sede + canchas. Un par de fetches, sin N+1.
@@ -27,7 +38,8 @@ export default async function EstablishmentDetailPage({
   }
 
   try {
-    const [establishment, fieldCatalog] = await Promise.all([
+    const [{ t }, establishment, fieldCatalog] = await Promise.all([
+      getTranslator(),
       getEstablishmentById(establishmentId),
       getVisibleFieldCatalog(),
       assertViewerCanSeeEstablishment(establishmentId),
@@ -52,20 +64,19 @@ export default async function EstablishmentDetailPage({
           />
           <div className="bg-pitch p-6 sm:p-8">
             <PageHeader
-              kicker="Sede"
+              kicker={t("common.unknownVenue")}
               title={establishment.name}
               description={
-                [establishment.address, establishment.phone]
-                  .filter(Boolean)
-                  .join(" · ") || "Sede CanchaYa"
+                [establishment.address, establishment.phone].filter(Boolean).join(" · ") ||
+                t("catalog.venueFallback")
               }
             />
           </div>
         </div>
         {fields.length === 0 ? (
           <EmptyState
-            title="Esta sede aún no publica canchas"
-            description="Vuelve pronto o explora otras sedes."
+            title={t("catalog.venueEmptyTitle")}
+            description={t("catalog.venueEmptyDescription")}
           />
         ) : (
           <div className="grid gap-5 md:grid-cols-2">

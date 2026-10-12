@@ -14,6 +14,7 @@ export class AppError extends Error {
   readonly code: AppErrorCode;
   readonly status: number;
   readonly details?: unknown;
+  readonly requestId?: string;
 
   /**
    * Propósito: Normaliza errores de dominio y de red para el BFF y la UI.
@@ -23,12 +24,14 @@ export class AppError extends Error {
     message: string,
     status: number,
     details?: unknown,
+    requestId?: string,
   ) {
     super(message);
     this.name = "AppError";
     this.code = code;
     this.status = status;
     this.details = details;
+    this.requestId = requestId;
   }
 }
 
@@ -64,5 +67,6 @@ export function serializeAppError(error: AppError) {
   return {
     message: error.message,
     code: error.code,
+    ...(error.status >= 500 && error.requestId ? { requestId: error.requestId } : {}),
   };
 }

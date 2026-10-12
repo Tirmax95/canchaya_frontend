@@ -1,10 +1,21 @@
 import { requireAdminModule } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { VenueMapSection } from "@/features/admin/venue-map/venue-map-section";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Admin · Dashboard" };
-
 const ADMIN_DASHBOARD_PATH = "/admin";
+
+/**
+ * Propósito: Título del documento del dashboard del staff.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.dashboardMeta") };
+}
 
 /**
  * Propósito: Dashboard principal del staff: mapa 3D en vivo del complejo a ancho completo,
@@ -15,7 +26,11 @@ export default async function AdminHomePage({
 }: {
   searchParams: Promise<{ fecha?: string }>;
 }) {
-  const [, { fecha }] = await Promise.all([requireAdminModule("dashboard"), searchParams]);
+  const [{ t }, , { fecha }] = await Promise.all([
+    getTranslator(),
+    requireAdminModule("dashboard"),
+    searchParams,
+  ]);
 
   /**
    * Output:
@@ -23,7 +38,7 @@ export default async function AdminHomePage({
    */
   return (
     <>
-      <h1 className="sr-only">Dashboard de tu sede</h1>
+      <h1 className="sr-only">{t("admin.dashboardSr")}</h1>
       <VenueMapSection requestedDay={fecha} dayNavigationBaseHref={ADMIN_DASHBOARD_PATH} />
     </>
   );

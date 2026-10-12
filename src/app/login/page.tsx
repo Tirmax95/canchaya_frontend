@@ -1,4 +1,6 @@
 import { getSession } from "@/core/auth/session";
+import { getTranslator } from "@/core/i18n/get-locale";
+import type { MessageKey } from "@/core/i18n/messages";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { LoginForm } from "@/features/auth/login-form";
 import { Alert } from "@/shared/ui/alert";
@@ -6,13 +8,23 @@ import { toSafeInternalPath } from "@/shared/lib/url";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Iniciar sesión" };
-
-const LOGIN_NOTICES: Record<string, string> = {
-  sesion: "Tu sesión se cerró (venció, se cerró en otro dispositivo o la cuenta fue bloqueada). Vuelve a entrar.",
-  clave: "Tu contraseña se actualizó. Entra con la nueva.",
-  "2fa": "Desactivaste la verificación en dos pasos. Vuelve a entrar.",
+const LOGIN_NOTICE_KEYS: Record<string, MessageKey> = {
+  sesion: "auth.noticeSession",
+  clave: "auth.noticePassword",
+  "2fa": "auth.noticeTwoFactor",
 };
+
+/**
+ * Propósito: Título de la página de acceso según el idioma activo.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("auth.loginTitle") };
+}
 
 /**
  * Propósito: Página de acceso. Si ya hay sesión, evita el formulario.
@@ -22,22 +34,24 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string; motivo?: string }>;
 }) {
-  const [session, params] = await Promise.all([getSession(), searchParams]);
+  const [{ t }, session, params] = await Promise.all([
+    getTranslator(),
+    getSession(),
+    searchParams,
+  ]);
   const nextPath = toSafeInternalPath(params.next);
   if (session) {
     redirect(nextPath ?? "/reservas");
   }
-  const notice = params.motivo ? LOGIN_NOTICES[params.motivo] : undefined;
+  const noticeKey = params.motivo ? LOGIN_NOTICE_KEYS[params.motivo] : undefined;
+  const notice = noticeKey ? t(noticeKey) : undefined;
 
   /**
    * Output:
    * @returns JSX.Element — Auth layout
    */
   return (
-    <AuthShell
-      title="Entra al partido"
-      subtitle="Jugadores globales, dueños aislados por organización. Demo: cubo@canchaya.test, dany@canchaya.test o jugador@canchaya.test / CanchaYa123."
-    >
+    <AuthShell title={t("auth.loginHeading")} subtitle={t("auth.loginSubtitle")}>
       {notice ? (
         <div className="mb-5">
           <Alert tone="info">{notice}</Alert>

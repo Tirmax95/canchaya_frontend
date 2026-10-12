@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { STATUS_REASON_MAX_LENGTH } from "@/domain/platform";
 import { ConfirmWithInput } from "@/features/admin/platform/confirm-with-input";
 import { usePlatformMutation } from "@/features/admin/platform/use-platform-mutation";
@@ -8,6 +9,7 @@ import { usePlatformMutation } from "@/features/admin/platform/use-platform-muta
  * Propósito: Acciones de una factura emitida: registrar pago (con referencia) o anular (con motivo).
  */
 export function InvoiceRowActions({ invoiceId }: { invoiceId: number }) {
+  const { t } = useI18n();
   const { runMutation, pendingActionKey, errorMessage } = usePlatformMutation();
   const endpoint = `/api/platform/invoices/${invoiceId}`;
 
@@ -18,10 +20,10 @@ export function InvoiceRowActions({ invoiceId }: { invoiceId: number }) {
   return (
     <div className="flex flex-col items-end gap-2">
       <ConfirmWithInput
-        triggerLabel="Registrar pago"
-        inputLabel="Referencia del pago"
-        placeholder="Ej. Nequi 3001234567 / transferencia #889"
-        confirmLabel="Marcar pagada"
+        triggerLabel={t("platform.registerPayment")}
+        inputLabel={t("platform.paymentReferenceLabel")}
+        placeholder={t("platform.paymentRefPlaceholder")}
+        confirmLabel={t("platform.markPaid")}
         minLength={2}
         maxLength={120}
         tone="primary"
@@ -31,9 +33,9 @@ export function InvoiceRowActions({ invoiceId }: { invoiceId: number }) {
         }
       />
       <ConfirmWithInput
-        triggerLabel="Anular"
-        inputLabel="Motivo de anulación"
-        confirmLabel="Anular factura"
+        triggerLabel={t("platform.voidTrigger")}
+        inputLabel={t("platform.voidReasonLabel")}
+        confirmLabel={t("platform.voidInvoice")}
         maxLength={STATUS_REASON_MAX_LENGTH}
         isPending={pendingActionKey === "void"}
         onConfirm={async (reason) =>

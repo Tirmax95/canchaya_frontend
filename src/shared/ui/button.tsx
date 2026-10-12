@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/core/i18n/provider";
 import { cn } from "@/shared/lib/cn";
 import Link from "next/link";
 import type { ButtonHTMLAttributes } from "react";
@@ -48,6 +51,7 @@ export function Button({
   type = "button",
   ...props
 }: ButtonProps) {
+  const { t } = useI18n();
   /**
    * Output:
    * @returns JSX.Element — Botón accesible con estado de carga
@@ -59,7 +63,7 @@ export function Button({
       className={buttonClassName(variant, className)}
       {...props}
     >
-      {isLoading ? "Cargando…" : children}
+      {isLoading ? t("common.loading") : children}
     </button>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
@@ -15,6 +16,7 @@ export function CatalogSearch({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const { t } = useI18n();
 
   /**
    * Propósito: Actualiza `q` sin perder el resto de filtros.
@@ -45,7 +47,7 @@ export function CatalogSearch({
       />
       {isPending ? (
         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-mist">
-          Filtrando…
+          {t("common.filtering")}
         </span>
       ) : null}
     </div>

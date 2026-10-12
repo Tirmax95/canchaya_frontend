@@ -1,10 +1,15 @@
 import { requireSuperAdmin } from "@/core/auth/guards";
 import { handleRoute, parsePositiveIntParam, readJsonBody } from "@/core/http/route";
-import { updateTenantBilling, updateTenantStatus } from "@/data/platform.repository";
+import {
+  updateTenantBilling,
+  updateTenantOnlinePayments,
+  updateTenantStatus,
+} from "@/data/platform.repository";
 import { parseSchema, tenantActionSchema } from "@/domain/schemas";
 
 /**
- * Propósito: Acciones del super admin sobre un tenant: aprobar, suspender, reactivar o cambiar su plan.
+ * Propósito: Acciones del super admin sobre un tenant: aprobar, suspender, reactivar,
+ * cambiar su plan o encender el cobro en línea.
  */
 export async function PUT(
   request: Request,
@@ -20,6 +25,8 @@ export async function PUT(
         commissionBps: tenantAction.commissionBps,
         billingEmail: tenantAction.billingEmail || undefined,
       });
+    } else if (tenantAction.action === "online_payments") {
+      await updateTenantOnlinePayments(organizationId, tenantAction.isEnabled);
     } else {
       await updateTenantStatus(organizationId, tenantAction);
     }

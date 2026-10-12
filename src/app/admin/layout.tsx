@@ -1,24 +1,47 @@
 import { TENANT_BILLING_PATH, TENANT_TEAM_PATH, getAdminAccess } from "@/application/admin-access";
 import { isStaff } from "@/core/auth/roles";
 import { requireSession } from "@/core/auth/session";
+import { getTranslator } from "@/core/i18n/get-locale";
+import { translateTenantModuleLabel } from "@/core/i18n/label-keys";
+import type { TranslateFn } from "@/core/i18n/translate";
+import { TENANT_MODULE_DEFINITIONS, type TenantModule } from "@/domain/tenant-modules";
 import { AdminShell, type AdminMenuItem } from "@/features/admin/admin-shell";
-import { TENANT_MODULE_DEFINITIONS } from "@/domain/tenant-modules";
 import { redirect } from "next/navigation";
 
-const SUPER_ADMIN_MENU_ITEMS: AdminMenuItem[] = [
-  { href: "/admin/plataforma", label: "Resumen", icon: "overview" },
-  { href: "/admin/tenants", label: "Tenants", icon: "tenants" },
-  { href: "/admin/facturacion", label: "Facturación", icon: "billing" },
-  { href: "/admin/usuarios", label: "Usuarios", icon: "users" },
-  { href: "/admin/reportes", label: "Reportes", icon: "reports" },
-  { href: "/admin/correos", label: "Correos", icon: "emails" },
-  { href: "/admin/auditoria", label: "Auditoría", icon: "audit" },
-];
+/**
+ * Propósito: Menú del super admin con etiquetas localizadas.
+ */
+function buildSuperAdminMenuItems(t: TranslateFn): AdminMenuItem[] {
+  /**
+   * Output:
+   * @returns AdminMenuItem[] — Enlaces de plataforma
+   */
+  return [
+    { href: "/admin/plataforma", label: t("admin.overview"), icon: "overview" },
+    { href: "/admin/tenants", label: t("admin.tenants"), icon: "tenants" },
+    { href: "/admin/facturacion", label: t("admin.billing"), icon: "billing" },
+    { href: "/admin/pagos", label: t("admin.payments"), icon: "payments" },
+    { href: "/admin/usuarios", label: t("admin.users"), icon: "users" },
+    { href: "/admin/reportes", label: t("admin.reports"), icon: "reports" },
+    { href: "/admin/correos", label: t("admin.emails"), icon: "emails" },
+    { href: "/admin/auditoria", label: t("admin.audit"), icon: "audit" },
+    { href: "/admin/logs", label: t("admin.logs"), icon: "logs" },
+  ];
+}
 
-const TENANT_OWNER_MENU_ITEMS: AdminMenuItem[] = [
-  { href: TENANT_BILLING_PATH, label: "Mi facturación", icon: "billing" },
-  { href: TENANT_TEAM_PATH, label: "Equipo", icon: "team" },
-];
+/**
+ * Propósito: Menú de cuenta del dueño del tenant (facturación y equipo).
+ */
+function buildTenantOwnerMenuItems(t: TranslateFn): AdminMenuItem[] {
+  /**
+   * Output:
+   * @returns AdminMenuItem[] — Enlaces de cuenta
+   */
+  return [
+    { href: TENANT_BILLING_PATH, label: t("admin.myBilling"), icon: "billing" },
+    { href: TENANT_TEAM_PATH, label: t("admin.team"), icon: "team" },
+  ];
+}
 
 /**
  * Propósito: Shell admin. Exige staff y arma el menú con los módulos que el super admin
@@ -36,16 +59,16 @@ export default async function AdminLayout({
   if (!isStaff(session)) {
     redirect("/reservas");
   }
-  const access = await getAdminAccess();
+  const [{ t }, access] = await Promise.all([getTranslator(), getAdminAccess()]);
   const moduleMenuItems: AdminMenuItem[] = access.enabledModules.map((tenantModule) => ({
     href: TENANT_MODULE_DEFINITIONS[tenantModule].href,
-    label: TENANT_MODULE_DEFINITIONS[tenantModule].label,
+    label: translateTenantModuleLabel(t, tenantModule as TenantModule),
     icon: tenantModule,
   }));
   const accountMenuItems = access.isSuperAdmin
-    ? SUPER_ADMIN_MENU_ITEMS
+    ? buildSuperAdminMenuItems(t)
     : access.isTenantOwner
-      ? TENANT_OWNER_MENU_ITEMS
+      ? buildTenantOwnerMenuItems(t)
       : [];
 
   /**
@@ -56,7 +79,7 @@ export default async function AdminLayout({
     <AdminShell
       workspaceLabel={access.workspaceLabel}
       moduleMenuItems={moduleMenuItems}
-      accountMenuTitle={access.isSuperAdmin ? "Plataforma" : "Cuenta"}
+      accountMenuTitle={access.isSuperAdmin ? t("admin.platform") : t("admin.account")}
       accountMenuItems={accountMenuItems}
       suspendedTenants={access.suspendedTenants}
       pendingTenantNames={access.pendingTenantNames}

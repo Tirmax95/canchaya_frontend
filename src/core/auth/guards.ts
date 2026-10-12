@@ -32,10 +32,10 @@ export async function requireStaff(): Promise<SessionUser> {
  */
 export async function requireSuperAdmin(): Promise<SessionUser> {
   const session = await requireSession();
-  if (!isAdmin(session)) {
+  if (!isAdmin(session) || session.twoFactorSetupRequired || session.isReadOnly) {
     /**
      * Output:
-     * @throws AppError — 403 si no es admin de plataforma
+     * @throws AppError — 403 si no es admin con 2FA, o si la sesión es "ver como"
      */
     throw new AppError("FORBIDDEN", "Solo el super admin puede realizar esta acción", 403);
   }

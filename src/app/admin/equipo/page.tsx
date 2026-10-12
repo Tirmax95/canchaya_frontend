@@ -1,17 +1,28 @@
 import { requireTenantOwnerAccess } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { getTeam } from "@/data/team.repository";
 import { PanelSection } from "@/features/admin/platform/platform-ui";
 import { TeamManager } from "@/features/admin/team/team-manager";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Admin · Equipo" };
+/**
+ * Propósito: Metadata de gestión de equipo.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.teamMeta") };
+}
 
 /**
  * Propósito: El dueño gestiona quién más administra cada uno de sus tenants.
  */
 export default async function TeamPage() {
-  const access = await requireTenantOwnerAccess();
+  const [{ t }, access] = await Promise.all([getTranslator(), requireTenantOwnerAccess()]);
   const teams = await Promise.all(
     access.ownedTenants.map(async (tenant) => ({ tenant, team: await getTeam(tenant.organizationId) })),
   );
@@ -23,9 +34,9 @@ export default async function TeamPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Cuenta"
-        title="Equipo"
-        description="Invita managers para que te ayuden con reservas, sedes y canchas. La facturación y el equipo siguen siendo solo tuyos."
+        kicker={t("admin.teamKicker")}
+        title={t("admin.teamTitle")}
+        description={t("admin.teamDescription")}
       />
       {teams.map(({ tenant, team }) => (
         <PanelSection key={tenant.organizationId} title={tenant.organizationName}>

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Outfit, Syne } from "next/font/google";
 import { getSession } from "@/core/auth/session";
+import { getLocale, getTranslator } from "@/core/i18n/get-locale";
+import { I18nProvider } from "@/core/i18n/provider";
 import { QueryProvider } from "@/widgets/query-provider";
 import { SessionProvider } from "@/widgets/session-provider";
+import { ClientErrorReporter } from "@/widgets/client-error-reporter";
 import { SiteFooter } from "@/widgets/site-footer";
 import { SiteHeader } from "@/widgets/site-header";
 import "./globals.css";
@@ -19,14 +22,23 @@ const syne = Syne({
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: {
-    default: "CanchaYa · Reserva tu cancha",
-    template: "%s · CanchaYa",
-  },
-  description:
-    "Encuentra sedes, elige tu cancha y reserva el horario en minutos.",
-};
+/**
+ * Propósito: Metadata del documento según el idioma de la cookie o Accept-Language.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título y descripción localizados
+   */
+  return {
+    title: {
+      default: t("meta.defaultTitle"),
+      template: t("meta.titleTemplate"),
+    },
+    description: t("meta.description"),
+  };
+}
 
 /**
  * Propósito: Shell global: tipografía, sesión hidratada y navegación.
@@ -36,24 +48,27 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
+  const [session, locale] = await Promise.all([getSession(), getLocale()]);
 
   /**
    * Output:
    * @returns JSX.Element — Documento HTML de la app
    */
   return (
-    <html lang="es">
+    <html lang={locale}>
       <body className={`${outfit.variable} ${syne.variable} antialiased`}>
-        <QueryProvider>
-          <SessionProvider user={session}>
-            <div className="flex min-h-screen flex-col">
-              <SiteHeader />
-              <main className="flex-1">{children}</main>
-              <SiteFooter />
-            </div>
-          </SessionProvider>
-        </QueryProvider>
+        <I18nProvider locale={locale}>
+          <QueryProvider>
+            <SessionProvider user={session}>
+              <ClientErrorReporter />
+              <div className="flex min-h-screen flex-col">
+                <SiteHeader />
+                <main className="flex-1">{children}</main>
+                <SiteFooter />
+              </div>
+            </SessionProvider>
+          </QueryProvider>
+        </I18nProvider>
       </body>
     </html>
   );

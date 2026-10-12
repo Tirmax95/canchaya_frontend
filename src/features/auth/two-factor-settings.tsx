@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { TextField } from "@/shared/ui/input";
@@ -46,6 +47,7 @@ export function TwoFactorSettings({
   continuePath,
 }: TwoFactorSettingsProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const [step, setStep] = useState<SetupStep>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -61,7 +63,7 @@ export function TwoFactorSettings({
     );
     setIsBusy(false);
     if (!ok || !payload.setup) {
-      setError(payload.message ?? "No se pudo generar el código QR");
+      setError(payload.message ?? t("twoFactor.setupFailed"));
       /**
        * Output:
        * Side effects — Muestra el error
@@ -86,7 +88,7 @@ export function TwoFactorSettings({
     const { ok, payload } = await postJson<{ recoveryCodes?: string[] }>("/api/auth/2fa/confirm", { code });
     setIsBusy(false);
     if (!ok || !payload.recoveryCodes) {
-      setError(payload.message ?? "Código incorrecto");
+      setError(payload.message ?? t("twoFactor.wrongCode"));
       /**
        * Output:
        * Side effects — Muestra el error y deja reintentar
@@ -111,7 +113,7 @@ export function TwoFactorSettings({
     const { ok, payload } = await postJson("/api/auth/2fa/disable", { code });
     setIsBusy(false);
     if (!ok) {
-      setError(payload.message ?? "No se pudo desactivar");
+      setError(payload.message ?? t("twoFactor.disableFailed"));
       /**
        * Output:
        * Side effects — Muestra el error
@@ -133,11 +135,8 @@ export function TwoFactorSettings({
      */
     return (
       <div className="space-y-5">
-        <Alert tone="info">Verificación en dos pasos activada.</Alert>
-        <p className="text-sm text-mist">
-          Guarda estos códigos de respaldo en un lugar seguro. Cada uno sirve una sola vez si
-          pierdes el teléfono. No los volverás a ver.
-        </p>
+        <Alert tone="info">{t("twoFactor.setupActivated")}</Alert>
+        <p className="text-sm text-mist">{t("twoFactor.recoveryBody")}</p>
         <ul className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-ink/40 p-4 font-mono text-sm text-bone">
           {step.recoveryCodes.map((recoveryCode) => (
             <li key={recoveryCode}>{recoveryCode}</li>
@@ -149,7 +148,7 @@ export function TwoFactorSettings({
             variant="secondary"
             onClick={() => void navigator.clipboard?.writeText(step.recoveryCodes.join("\n"))}
           >
-            Copiar códigos
+            {t("twoFactor.copyCodes")}
           </Button>
           <Button
             type="button"
@@ -158,7 +157,7 @@ export function TwoFactorSettings({
               router.refresh();
             }}
           >
-            Ya los guardé, continuar
+            {t("twoFactor.recoverySaved")}
           </Button>
         </div>
       </div>
@@ -173,22 +172,20 @@ export function TwoFactorSettings({
     return (
       <form onSubmit={confirmSetup} className="space-y-5">
         {error ? <Alert>{error}</Alert> : null}
-        <ol className="list-decimal space-y-1 pl-5 text-sm text-mist">
-          <li>Abre Google Authenticator, Authy, 1Password o similar.</li>
-          <li>Escanea el código QR (o escribe la clave a mano).</li>
-          <li>Escribe el código de 6 dígitos que aparece.</li>
-        </ol>
+        <p className="text-sm text-mist">{t("twoFactor.setupBody")}</p>
         {/* eslint-disable-next-line @next/next/no-img-element -- data URL generada por el backend */}
         <img
           src={step.qrCodeDataUrl}
-          alt="Código QR para la app autenticadora"
+          alt={t("twoFactor.qrAlt")}
           width={200}
           height={200}
           className="rounded-2xl bg-white p-2"
         />
-        <p className="break-all font-mono text-xs text-mist">Clave: {step.secret}</p>
+        <p className="break-all font-mono text-xs text-mist">
+          {t("twoFactor.secretManual", { secret: step.secret })}
+        </p>
         <TextField
-          label="Código de 6 dígitos"
+          label={t("twoFactor.sixDigitCode")}
           name="code"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -198,7 +195,7 @@ export function TwoFactorSettings({
           autoFocus
         />
         <Button type="submit" className="w-full" isLoading={isBusy}>
-          Activar verificación
+          {t("twoFactor.activateVerification")}
         </Button>
       </form>
     );
@@ -213,25 +210,22 @@ export function TwoFactorSettings({
       <div className="space-y-5">
         {error ? <Alert>{error}</Alert> : null}
         <Alert tone="info">
-          La verificación en dos pasos está activa. Te quedan {recoveryCodesRemaining} códigos de
-          respaldo.
+          {t("twoFactor.enabledTitle")}{" "}
+          {t("twoFactor.recoveryRemaining", { count: recoveryCodesRemaining })}
         </Alert>
         {isMandatory ? (
-          <p className="text-sm text-mist">
-            Es obligatoria para el super admin. Si pierdes el teléfono y los códigos, otro
-            super admin puede reiniciarla.
-          </p>
+          <p className="text-sm text-mist">{t("twoFactor.mandatoryNoDisable")}</p>
         ) : (
           <form onSubmit={disable} className="space-y-4">
             <TextField
-              label="Para desactivarla, escribe un código actual"
+              label={t("twoFactor.disableLabel")}
               name="code"
               autoComplete="one-time-code"
               maxLength={16}
               required
             />
             <Button type="submit" variant="danger" isLoading={isBusy}>
-              Desactivar verificación
+              {t("twoFactor.disableVerification")}
             </Button>
           </form>
         )}
@@ -246,17 +240,10 @@ export function TwoFactorSettings({
   return (
     <div className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
-      {isMandatory ? (
-        <Alert tone="info">
-          Como super admin debes activar la verificación en dos pasos antes de usar el panel de
-          la plataforma.
-        </Alert>
-      ) : null}
-      <p className="text-sm text-mist">
-        Además de tu contraseña, te pediremos un código de tu teléfono al iniciar sesión.
-      </p>
+      {isMandatory ? <Alert tone="info">{t("twoFactor.mandatoryAdmin")}</Alert> : null}
+      <p className="text-sm text-mist">{t("twoFactor.idleBody")}</p>
       <Button type="button" className="w-full" isLoading={isBusy} onClick={() => void startSetup()}>
-        Configurar verificación en dos pasos
+        {t("twoFactor.beginSetup")}
       </Button>
     </div>
   );

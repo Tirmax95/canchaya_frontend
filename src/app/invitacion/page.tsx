@@ -1,5 +1,7 @@
 import { getSession } from "@/core/auth/session";
 import { AppError } from "@/core/errors/app-error";
+import { getTranslator } from "@/core/i18n/get-locale";
+import type { TranslateFn } from "@/core/i18n/translate";
 import { previewInvitation, type InvitationPreview } from "@/data/team.repository";
 import { OPAQUE_TOKEN_PATTERN } from "@/domain/schemas";
 import { AcceptInvitationButton } from "@/features/auth/accept-invitation-button";
@@ -10,23 +12,34 @@ import { buttonClassName } from "@/shared/ui/button";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Invitación al equipo",
-  referrer: "no-referrer",
-};
+/**
+ * Propósito: Título de invitación según el idioma activo.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título y referrer
+   */
+  return {
+    title: t("auth.invitationTitle"),
+    referrer: "no-referrer",
+  };
+}
 
 /**
  * Propósito: Datos públicos de la invitación o el motivo por el que no sirve.
  */
 async function loadInvitation(
   token: string | undefined,
+  t: TranslateFn,
 ): Promise<{ invitation: InvitationPreview } | { errorMessage: string }> {
   if (!token || !OPAQUE_TOKEN_PATTERN.test(token)) {
     /**
      * Output:
      * @returns object — Enlace mal formado
      */
-    return { errorMessage: "El enlace no es válido o está incompleto." };
+    return { errorMessage: t("auth.invitationInvalid") };
   }
   try {
     /**
@@ -40,7 +53,8 @@ async function loadInvitation(
      * @returns object — Invitación vencida, usada o inexistente
      */
     return {
-      errorMessage: error instanceof AppError ? error.message : "No pudimos abrir la invitación.",
+      errorMessage:
+        error instanceof AppError ? error.message : t("auth.invitationOpenFailed"),
     };
   }
 }
@@ -55,7 +69,8 @@ export default async function InvitationPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  const [result, session] = await Promise.all([loadInvitation(token), getSession()]);
+  const [{ t, intlLocale }, session] = await Promise.all([getTranslator(), getSession()]);
+  const result = await loadInvitation(token, t);
 
   if ("errorMessage" in result || !token) {
     /**
@@ -63,8 +78,13 @@ export default async function InvitationPage({
      * @returns JSX.Element — Aviso de enlace inválido
      */
     return (
-      <AuthShell title="Invitación no disponible" subtitle="Pide al dueño de la sede que te envíe una nueva.">
-        <Alert>{"errorMessage" in result ? result.errorMessage : "El enlace no es válido."}</Alert>
+      <AuthShell
+        title={t("auth.invitationUnavailable")}
+        subtitle={t("auth.invitationUnavailableSubtitle")}
+      >
+        <Alert>
+          {"errorMessage" in result ? result.errorMessage : t("auth.invitationInvalid")}
+        </Alert>
       </AuthShell>
     );
   }
@@ -72,6 +92,7 @@ export default async function InvitationPage({
   const { invitation } = result;
   const loginHref = `/login?next=${encodeURIComponent(`/invitacion?token=${token}`)}`;
   const isInvitedAccount = session?.email.toLowerCase() === invitation.email.toLowerCase();
+  const inviterName = invitation.inviterName ?? t("common.noOwner");
 
   /**
    * Output:
@@ -79,35 +100,39 @@ export default async function InvitationPage({
    */
   return (
     <AuthShell
-      kicker="Invitación"
-      title={`Únete a ${invitation.organizationName}`}
-      subtitle={`${invitation.inviterName ?? "El dueño"} te invitó como manager: podrás gestionar reservas, sedes y canchas.`}
+      kicker={t("auth.invitationKicker")}
+      title={t("auth.joinOrg", { name: invitation.organizationName })}
+      subtitle={t("auth.invitedAsManager", { name: inviterName })}
     >
       <div className="space-y-5">
         <p className="text-sm text-mist">
-          Invitación para <span className="text-bone">{invitation.email}</span> · vence{" "}
-          {formatDateTime(invitation.expiresAt)}
+          {t("auth.invitationFor", {
+            email: invitation.email,
+            date: formatDateTime(invitation.expiresAt, intlLocale),
+          })}
         </p>
         {isInvitedAccount ? (
           <AcceptInvitationButton token={token} />
         ) : session ? (
           <div className="space-y-3">
             <Alert>
-              Entraste como {session.email}. La invitación es para {invitation.email}: cierra sesión y
-              entra con esa cuenta.
+              {t("auth.wrongAccount", {
+                current: session.email,
+                expected: invitation.email,
+              })}
             </Alert>
           </div>
         ) : (
           <div className="space-y-3">
             <Link href={loginHref} className={buttonClassName("primary", "w-full justify-center")}>
-              Iniciar sesión para aceptar
+              {t("auth.loginToAccept")}
             </Link>
             <p className="text-center text-xs text-mist">
-              ¿No tienes cuenta?{" "}
+              {t("auth.invitationNoAccount")}{" "}
               <Link href="/registro" className="text-lime hover:underline">
-                Regístrate con {invitation.email}
+                {t("auth.registerWithEmail", { email: invitation.email })}
               </Link>{" "}
-              y vuelve a abrir el enlace del correo.
+              {t("auth.invitationReopenHint")}
             </p>
           </div>
         )}

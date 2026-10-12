@@ -1,5 +1,6 @@
 import { requireAdminModule } from "@/application/admin-access";
 import { requireSession } from "@/core/auth/session";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { listManagedEstablishments } from "@/data/establishment.repository";
 import { FieldForm } from "@/features/admin/field-form";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -13,8 +14,9 @@ export default async function NewFieldPage({
 }: {
   searchParams: Promise<{ sede?: string }>;
 }) {
-  await requireAdminModule("fields");
-  const [session, establishments, { sede }] = await Promise.all([
+  const [{ t }, , session, establishments, { sede }] = await Promise.all([
+    getTranslator(),
+    requireAdminModule("fields"),
     requireSession(),
     listManagedEstablishments(),
     searchParams,
@@ -32,7 +34,7 @@ export default async function NewFieldPage({
    */
   return (
     <div className="mx-auto max-w-xl space-y-8">
-      <PageHeader kicker="Canchas" title="Nueva cancha" />
+      <PageHeader kicker={t("admin.courtsKicker")} title={t("admin.newCourt")} />
       <div className="rounded-[32px] border border-white/8 bg-pitch p-6">
         <FieldForm
           establishments={establishments}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { SessionUser } from "@/domain/user";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
@@ -12,6 +13,7 @@ import { useState } from "react";
  */
 export function ProfileForm({ user }: { user: SessionUser }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,9 +38,9 @@ export function ProfileForm({ user }: { user: SessionUser }) {
     });
     const payload = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo actualizar el perfil");
+      setError(payload.message ?? t("profile.updateFailed"));
     } else {
-      setSuccess("Perfil actualizado");
+      setSuccess(t("profile.updated"));
       router.refresh();
     }
     setIsSubmitting(false);
@@ -52,26 +54,22 @@ export function ProfileForm({ user }: { user: SessionUser }) {
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
       {success ? <Alert tone="info">{success}</Alert> : null}
+      <TextField label={t("profile.name")} name="fullName" defaultValue={user.fullName ?? ""} />
       <TextField
-        label="Nombre"
-        name="fullName"
-        defaultValue={user.fullName ?? ""}
-      />
-      <TextField
-        label="Correo"
+        label={t("profile.email")}
         name="email"
         type="email"
         defaultValue={user.email}
         required
       />
       <TextField
-        label="Teléfono"
+        label={t("profile.phone")}
         name="phone"
         defaultValue={user.phone ?? ""}
         placeholder="+573001112233"
       />
       <Button type="submit" isLoading={isSubmitting}>
-        Guardar cambios
+        {t("profile.saveChanges")}
       </Button>
     </form>
   );

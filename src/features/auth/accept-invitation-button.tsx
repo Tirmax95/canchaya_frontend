@@ -1,7 +1,9 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
+import { useConfirmAction } from "@/shared/ui/confirm-dialog";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -10,6 +12,8 @@ import { useState } from "react";
  */
 export function AcceptInvitationButton({ token }: { token: string }) {
   const router = useRouter();
+  const { t } = useI18n();
+  const { askConfirmation, confirmationDialog } = useConfirmAction();
   const [isAccepting, setIsAccepting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -26,7 +30,7 @@ export function AcceptInvitationButton({ token }: { token: string }) {
     });
     const payload = (await response.json().catch(() => ({}))) as { redirectTo?: string; message?: string };
     if (!response.ok) {
-      setErrorMessage(payload.message ?? "No se pudo aceptar la invitación");
+      setErrorMessage(payload.message ?? t("auth.acceptFailed"));
       setIsAccepting(false);
       /**
        * Output:
@@ -43,14 +47,32 @@ export function AcceptInvitationButton({ token }: { token: string }) {
   }
 
   /**
+   * Propósito: Pide confirmación antes de aceptar la invitación y entrar al panel.
+   */
+  function requestAccept() {
+    askConfirmation({
+      title: t("auth.inviteConfirmTitle"),
+      description: t("auth.inviteConfirmDescription"),
+      confirmLabel: t("auth.inviteConfirmYes"),
+      tone: "primary",
+      run: acceptInvitation,
+    });
+    /**
+     * Output:
+     * Side effects — Abre el modal; la invitación sigue pendiente hasta aceptar
+     */
+  }
+
+  /**
    * Output:
    * @returns JSX.Element — Botón de aceptar
    */
   return (
     <div className="space-y-3">
+      {confirmationDialog}
       {errorMessage ? <Alert>{errorMessage}</Alert> : null}
-      <Button type="button" isLoading={isAccepting} onClick={() => void acceptInvitation()} className="w-full">
-        Unirme al equipo
+      <Button type="button" isLoading={isAccepting} onClick={requestAccept} className="w-full">
+        {t("auth.acceptInvite")}
       </Button>
     </div>
   );

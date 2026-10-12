@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { VenueMapData } from "@/application/venue-map";
 import { BOOKING_CLOSE_HOUR, BOOKING_OPEN_HOUR } from "@/domain/booking";
 import {
@@ -102,6 +103,7 @@ export function VenueMapView({
   /** Módulos habilitados para el tenant: ocultan accesos a páginas no permitidas. */
   permissions: VenueMapPermissions;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const {
     targetRef: fullscreenTargetRef,
@@ -222,7 +224,7 @@ export function VenueMapView({
   return (
     <section
       ref={fullscreenTargetRef}
-      aria-label="Mapa 3D del complejo"
+      aria-label={t("venueMap.mapAria")}
       className={cn(
         "relative bg-[linear-gradient(180deg,#0b1710_0%,#08110c_100%)]",
         isFullscreen
@@ -251,7 +253,11 @@ export function VenueMapView({
       <div className="grid gap-3 p-3 lg:contents">
         <VenueKpiStrip
           summary={summary}
-          referenceLabel={isLive ? "en este momento" : `a las ${formatHourOfDay(referenceHour)}`}
+          referenceLabel={
+            isLive
+              ? t("venueMap.referenceLive")
+              : t("venueMap.referenceAtHour", { hour: formatHourOfDay(referenceHour) })
+          }
         />
         {selectedEstablishment ? (
           <VenueDetailPanel

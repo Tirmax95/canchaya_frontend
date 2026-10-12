@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { Establishment } from "@/domain/establishment";
 import type { Field } from "@/domain/field";
 import { Alert } from "@/shared/ui/alert";
@@ -23,6 +24,7 @@ export function FieldForm({
   ownerId: number;
   defaultEstablishmentId?: number;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +56,7 @@ export function FieldForm({
     );
     const payload = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo guardar la cancha");
+      setError(payload.message ?? t("admin.saveFieldFailed"));
       setIsSubmitting(false);
       return;
     }
@@ -70,14 +72,14 @@ export function FieldForm({
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
       <label className="block space-y-1.5">
-        <span className="text-sm font-medium text-mist">Sede</span>
+        <span className="text-sm font-medium text-mist">{t("admin.formVenueLabel")}</span>
         <select
           name="id_establishment"
           required
           defaultValue={field?.establishmentId ?? defaultEstablishmentId}
           className="w-full rounded-2xl border border-white/10 bg-ink/40 px-4 py-3 text-bone outline-none focus:border-lime/70"
         >
-          <option value="">Selecciona una sede</option>
+          <option value="">{t("admin.formSelectVenue")}</option>
           {establishments.map((establishment) => (
             <option
               key={establishment.establishmentId}
@@ -89,13 +91,13 @@ export function FieldForm({
         </select>
       </label>
       <TextField
-        label="Número o nombre de cancha"
+        label={t("admin.courtNumber")}
         name="number_field"
         required
         defaultValue={field?.numberField}
       />
       <TextField
-        label="Precio por hora (COP)"
+        label={t("admin.pricePerHour")}
         name="base_price_per_hour"
         type="number"
         min={1}
@@ -103,18 +105,18 @@ export function FieldForm({
         defaultValue={field?.basePricePerHour}
       />
       <TextField
-        label="URL de imagen"
+        label={t("admin.imageUrl")}
         name="image_fields"
         required
         defaultValue={field?.imageFields}
       />
       <TextAreaField
-        label="Descripción"
+        label={t("admin.description")}
         name="description"
         defaultValue={field?.description}
       />
       <Button type="submit" isLoading={isSubmitting}>
-        {isEditing ? "Actualizar cancha" : "Crear cancha"}
+        {isEditing ? t("admin.submitUpdateCourt") : t("admin.submitCreateCourt")}
       </Button>
     </form>
   );

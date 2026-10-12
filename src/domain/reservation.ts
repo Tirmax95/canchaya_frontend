@@ -22,5 +22,8 @@ export interface Reservation {
 export interface ReservationView extends Reservation {
   fieldName: string;
   establishmentName: string;
+  establishmentId: number | null;
+  organizationId: number | null;
+  organizationName: string | null;
   priceEstimate: number;
 }

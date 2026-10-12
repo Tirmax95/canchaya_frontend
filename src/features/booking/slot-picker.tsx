@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { MAX_BOOKING_HOURS } from "@/domain/booking";
 import type { TimeSlot } from "@/domain/booking";
 import { cn } from "@/shared/lib/cn";
@@ -19,6 +20,7 @@ export function SlotPicker({
   durationHours: number;
   onChange: (startIso: string | null, durationHours: number) => void;
 }) {
+  const { t } = useI18n();
   const [hours, setHours] = useState(durationHours);
 
   const selectedIndex = useMemo(
@@ -63,7 +65,9 @@ export function SlotPicker({
                   : "border border-white/10 text-mist hover:text-bone",
               )}
             >
-              {value} {value === 1 ? "hora" : "horas"}
+              {value === 1
+                ? t("booking.oneHour", { count: value })
+                : t("booking.manyHours", { count: value })}
             </button>
           ),
         )}

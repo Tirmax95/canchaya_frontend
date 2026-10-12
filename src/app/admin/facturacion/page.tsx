@@ -1,11 +1,8 @@
 import { requireSuperAdminAccess } from "@/application/admin-access";
+import { getTranslator } from "@/core/i18n/get-locale";
+import { INVOICE_STATUS_KEYS, translateMappedLabel } from "@/core/i18n/label-keys";
 import { listPlatformInvoices, listPlatformTenants } from "@/data/platform.repository";
-import {
-  INVOICE_STATUS_FILTERS,
-  INVOICE_STATUS_LABELS,
-  type InvoiceStatusFilter,
-  toBillingPeriod,
-} from "@/domain/platform";
+import { INVOICE_STATUS_FILTERS, type InvoiceStatusFilter, toBillingPeriod } from "@/domain/platform";
 import { InvoiceGenerator } from "@/features/admin/platform/invoice-generator";
 import { InvoiceTable } from "@/features/admin/platform/invoice-table";
 import { PanelSection } from "@/features/admin/platform/platform-ui";
@@ -16,7 +13,17 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Admin · Facturación" };
+/**
+ * Propósito: Metadata de facturación de plataforma.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.billingMeta") };
+}
 
 const BILLING_PATH = "/admin/facturacion";
 const SELECTABLE_PAST_MONTHS = 12;
@@ -44,7 +51,12 @@ export default async function PlatformBillingPage({
 }: {
   searchParams: Promise<{ estado?: string; tenant?: string }>;
 }) {
-  const [, { estado, tenant }] = await Promise.all([requireSuperAdminAccess(), searchParams]);
+  const [{ t, intlLocale }, , { estado, tenant }] = await Promise.all([
+    getTranslator(),
+    requireSuperAdminAccess(),
+    searchParams,
+  ]);
+  const consultLabel = t("common.consult");
   const statusFilter = INVOICE_STATUS_FILTERS.includes(estado as InvoiceStatusFilter)
     ? (estado as InvoiceStatusFilter)
     : undefined;
@@ -63,8 +75,11 @@ export default async function PlatformBillingPage({
     .filter((invoice) => invoice.status === "issued")
     .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
   const statusTabs: Array<{ key?: InvoiceStatusFilter; label: string }> = [
-    { label: "Todas" },
-    ...INVOICE_STATUS_FILTERS.map((key) => ({ key, label: INVOICE_STATUS_LABELS[key] })),
+    { label: t("common.all") },
+    ...INVOICE_STATUS_FILTERS.map((key) => ({
+      key,
+      label: translateMappedLabel(t, INVOICE_STATUS_KEYS, key),
+    })),
   ];
 
   /**
@@ -74,18 +89,24 @@ export default async function PlatformBillingPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Plataforma"
-        title="Facturación"
-        description="Cada tenant paga su mensualidad más una comisión sobre las reservas confirmadas o jugadas del mes. El plan se define en Tenants."
+        kicker={t("platform.kicker")}
+        title={t("platform.billingTitle")}
+        description={t("platform.billingDescription")}
       />
 
-      <PanelSection title="Emitir facturas del mes">
+      <PanelSection title={t("platform.issueInvoices")}>
         <InvoiceGenerator selectablePeriods={selectablePeriods} defaultPeriod={toBillingPeriod(now, -1)} />
       </PanelSection>
 
       <PanelSection
-        title="Facturas"
-        action={<span className="text-xs text-mist">Por cobrar en esta vista: {formatMoney(listedOutstanding)}</span>}
+        title={t("platform.invoices")}
+        action={
+          <span className="text-xs text-mist">
+            {t("platform.outstandingInView", {
+              amount: formatMoney(listedOutstanding, intlLocale, consultLabel),
+            })}
+          </span>
+        }
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {statusTabs.map((statusTab) => (
@@ -110,7 +131,7 @@ export default async function PlatformBillingPage({
               organizationId ? "border-white/10 text-mist hover:text-bone" : "border-lime/50 bg-lime/10 text-lime",
             )}
           >
-            Todos los tenants
+            {t("platform.allTenantsFilter")}
           </Link>
           {tenants.map((tenantOption) => (
             <Link
@@ -129,8 +150,8 @@ export default async function PlatformBillingPage({
         </div>
         {invoices.length === 0 ? (
           <EmptyState
-            title="Sin facturas"
-            description="Define el plan de cada tenant y emite las facturas del mes desde el formulario de arriba."
+            title={t("platform.invoicesEmptyTitle")}
+            description={t("platform.invoicesEmptyDescription")}
           />
         ) : (
           <InvoiceTable invoices={invoices} audience={{ kind: "platform" }} />

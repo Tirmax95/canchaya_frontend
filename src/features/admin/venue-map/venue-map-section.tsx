@@ -1,5 +1,6 @@
 import { getAdminAccess } from "@/application/admin-access";
 import { getVenueMapData } from "@/application/venue-map";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { VenueMapView } from "@/features/admin/venue-map/venue-map-view";
 import { EmptyState } from "@/shared/ui/empty-state";
 import Link from "next/link";
@@ -16,7 +17,8 @@ export async function VenueMapSection({
   requestedDay?: string;
   dayNavigationBaseHref: string;
 }) {
-  const [venueMapData, access] = await Promise.all([
+  const [{ t }, venueMapData, access] = await Promise.all([
+    getTranslator(),
     getVenueMapData(requestedDay),
     getAdminAccess(),
   ]);
@@ -27,12 +29,12 @@ export async function VenueMapSection({
      */
     return (
       <EmptyState
-        title="Aún no tienes sedes"
-        description="Crea tu primera sede para ver el mapa de tus canchas."
+        title={t("venueMap.emptyTitle")}
+        description={t("venueMap.emptyDescription")}
         action={
           access.enabledModules.includes("establishments") ? (
             <Link href="/admin/establecimientos/nuevo" className="text-lime hover:underline">
-              Crear sede
+              {t("admin.createVenueAction")}
             </Link>
           ) : undefined
         }

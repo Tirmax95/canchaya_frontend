@@ -1,5 +1,6 @@
 import { requireAdminModule } from "@/application/admin-access";
 import { getManagedFieldCatalog } from "@/application/catalog";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { DeleteButton } from "@/features/admin/delete-button";
 import { VenueMapSection } from "@/features/admin/venue-map/venue-map-section";
 import {
@@ -13,12 +14,17 @@ import { PageHeader } from "@/shared/ui/page-header";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Admin · Canchas" };
-
-const VIEW_MODE_OPTIONS: Array<{ mode: FieldsViewMode; label: string }> = [
-  { mode: "lista", label: "Lista" },
-  { mode: "mapa", label: "Mapa 3D" },
-];
+/**
+ * Propósito: Metadata del inventario de canchas.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("admin.courtsMeta") };
+}
 
 /**
  * Propósito: Inventario de canchas con dos vistas: tabla clásica o mapa isométrico del complejo
@@ -29,11 +35,16 @@ export default async function AdminFieldsPage({
 }: {
   searchParams: Promise<{ vista?: string; fecha?: string }>;
 }) {
-  const [, { vista, fecha }] = await Promise.all([
+  const [{ t, intlLocale }, , { vista, fecha }] = await Promise.all([
+    getTranslator(),
     requireAdminModule("fields"),
     searchParams,
   ]);
   const viewMode = parseFieldsViewMode(vista);
+  const viewModeOptions: Array<{ mode: FieldsViewMode; label: string }> = [
+    { mode: "lista", label: t("admin.listView") },
+    { mode: "mapa", label: t("admin.mapView") },
+  ];
 
   /**
    * Output:
@@ -42,16 +53,16 @@ export default async function AdminFieldsPage({
   return (
     <div className="space-y-8">
       <PageHeader
-        kicker="Canchas"
-        title="Inventario"
+        kicker={t("admin.courtsKicker")}
+        title={t("admin.courtsInventory")}
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <ViewModeToggle activeMode={viewMode} />
+            <ViewModeToggle activeMode={viewMode} options={viewModeOptions} viewModeLabel={t("admin.viewMode")} />
             <Link
               href="/admin/canchas/nueva"
               className="rounded-full bg-lime px-4 py-2 text-sm font-semibold text-ink"
             >
-              Nueva cancha
+              {t("admin.newCourt")}
             </Link>
           </div>
         }
@@ -62,7 +73,7 @@ export default async function AdminFieldsPage({
           dayNavigationBaseHref={buildFieldsViewHref("mapa")}
         />
       ) : (
-        <FieldsTableSection />
+        <FieldsTableSection intlLocale={intlLocale} consultLabel={t("common.consult")} />
       )}
     </div>
   );
@@ -71,14 +82,22 @@ export default async function AdminFieldsPage({
 /**
  * Propósito: Toggle segmentado entre vistas; usa enlaces para que funcione sin JS y con historial.
  */
-function ViewModeToggle({ activeMode }: { activeMode: FieldsViewMode }) {
+function ViewModeToggle({
+  activeMode,
+  options,
+  viewModeLabel,
+}: {
+  activeMode: FieldsViewMode;
+  options: Array<{ mode: FieldsViewMode; label: string }>;
+  viewModeLabel: string;
+}) {
   /**
    * Output:
    * @returns JSX.Element — Control segmentado Lista / Mapa 3D
    */
   return (
-    <nav aria-label="Modo de vista" className="flex rounded-full border border-white/10 bg-white/4 p-1">
-      {VIEW_MODE_OPTIONS.map(({ mode, label }) => (
+    <nav aria-label={viewModeLabel} className="flex rounded-full border border-white/10 bg-white/4 p-1">
+      {options.map(({ mode, label }) => (
         <Link
           key={mode}
           href={buildFieldsViewHref(mode)}
@@ -98,8 +117,14 @@ function ViewModeToggle({ activeMode }: { activeMode: FieldsViewMode }) {
 /**
  * Propósito: Vista lista clásica con acciones de staff.
  */
-async function FieldsTableSection() {
-  const fields = await getManagedFieldCatalog();
+async function FieldsTableSection({
+  intlLocale,
+  consultLabel,
+}: {
+  intlLocale: string;
+  consultLabel: string;
+}) {
+  const [{ t }, fields] = await Promise.all([getTranslator(), getManagedFieldCatalog()]);
 
   /**
    * Output:
@@ -110,10 +135,10 @@ async function FieldsTableSection() {
       <table className="w-full text-left text-sm">
         <thead className="bg-white/4 text-mist">
           <tr>
-            <th className="px-4 py-3 font-medium">Cancha</th>
-            <th className="px-4 py-3 font-medium">Sede</th>
-            <th className="px-4 py-3 font-medium">Precio</th>
-            <th className="px-4 py-3 font-medium">Acciones</th>
+            <th className="px-4 py-3 font-medium">{t("admin.tableCourt")}</th>
+            <th className="px-4 py-3 font-medium">{t("admin.tableVenue")}</th>
+            <th className="px-4 py-3 font-medium">{t("admin.tablePrice")}</th>
+            <th className="px-4 py-3 font-medium">{t("admin.tableActions")}</th>
           </tr>
         </thead>
         <tbody>
@@ -121,15 +146,17 @@ async function FieldsTableSection() {
             <tr key={field.id} className="border-t border-white/8">
               <td className="px-4 py-3 text-bone">{field.numberField}</td>
               <td className="px-4 py-3 text-mist">{field.establishmentName}</td>
-              <td className="px-4 py-3 text-bone">{formatMoney(field.basePricePerHour)}</td>
+              <td className="px-4 py-3 text-bone">
+                {formatMoney(field.basePricePerHour, intlLocale, consultLabel)}
+              </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/admin/canchas/${field.id}`} className="text-lime hover:underline">
-                    Editar
+                    {t("common.edit")}
                   </Link>
                   <DeleteButton
                     href={`/api/fields/${field.id}`}
-                    label={`cancha ${field.numberField}`}
+                    label={t("admin.deleteCourt", { number: field.numberField })}
                   />
                 </div>
               </td>

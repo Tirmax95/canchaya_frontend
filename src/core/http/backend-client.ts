@@ -75,6 +75,7 @@ async function fetchBackend<T>(
 ): Promise<T> {
   const { backendUrl } = getServerEnv();
   const method = request.method ?? "GET";
+  const requestId = crypto.randomUUID();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -89,6 +90,7 @@ async function fetchBackend<T>(
       method,
       headers: {
         Accept: accept,
+        "X-Request-Id": requestId,
         ...(request.body !== undefined
           ? { "Content-Type": "application/json" }
           : {}),
@@ -108,6 +110,7 @@ async function fetchBackend<T>(
         response.status,
         await parseJsonSafely(response),
         Boolean(request.sessionId),
+        requestId,
       );
     }
 
@@ -130,6 +133,8 @@ async function fetchBackend<T>(
         "UPSTREAM",
         "El servidor tardó demasiado en responder",
         504,
+        undefined,
+        requestId,
       );
     }
 
@@ -141,6 +146,8 @@ async function fetchBackend<T>(
       "UPSTREAM",
       "No se pudo conectar con el API de CanchaYa",
       502,
+      undefined,
+      requestId,
     );
   } finally {
     clearTimeout(timeoutId);
@@ -225,6 +232,7 @@ function mapBackendFailure(
   status: number,
   payload: unknown,
   wasSessionSent: boolean,
+  requestId?: string,
 ): AppError {
   const message = extractPublicMessage(payload);
   const code =
@@ -244,11 +252,21 @@ function mapBackendFailure(
                 ? "VALIDATION"
                 : "UPSTREAM";
 
+  const payloadRequestId =
+    payload && typeof payload === "object" && "requestId" in payload
+      ? String((payload as { requestId?: unknown }).requestId ?? "")
+      : "";
   /**
    * Output:
    * @returns AppError — Error listo para serializar al cliente
    */
-  return new AppError(code, message, status || 502);
+  return new AppError(
+    code,
+    message,
+    status || 502,
+    undefined,
+    payloadRequestId || requestId,
+  );
 }
 
 /**

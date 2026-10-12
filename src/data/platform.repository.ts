@@ -1,6 +1,7 @@
 import { requestAuthedBackend } from "@/core/http/backend-client";
 import { toSessionUser } from "@/data/auth.repository";
 import type { SessionUser } from "@/domain/user";
+import type { SystemErrorLogPage } from "@/domain/observability";
 import type {
   AuditEntry,
   EmailOutboxPage,
@@ -55,7 +56,10 @@ export async function listPlatformTenants(): Promise<PlatformTenant[]> {
    * Output:
    * @returns PlatformTenant[] — Tenants ordenados por nombre
    */
-  return payload.tenants;
+  return payload.tenants.map((tenant) => ({
+    ...tenant,
+    onlinePaymentsEnabled: tenant.onlinePaymentsEnabled === true,
+  }));
 }
 
 /**
@@ -110,6 +114,24 @@ export async function updateTenantBilling(
   /**
    * Output:
    * Side effects — Plan persistido
+   */
+}
+
+/**
+ * Propósito: Enciende o apaga el cobro en línea de reservas de un tenant. Solo super admin.
+ */
+export async function updateTenantOnlinePayments(
+  organizationId: number,
+  isEnabled: boolean,
+): Promise<void> {
+  await requestAuthedBackend<null>({
+    path: `/platform/tenants/${organizationId}/online-payments`,
+    method: "PUT",
+    body: { is_enabled: isEnabled },
+  });
+  /**
+   * Output:
+   * Side effects — Flag persistido
    */
 }
 
@@ -266,6 +288,33 @@ export async function listAuditEntries(beforeAuditId?: number, limit = 50): Prom
    * @returns AuditEntry[] — Entradas más recientes primero
    */
   return payload.entries;
+}
+
+/**
+ * Propósito: Bitácora de errores de todo el sistema, paginada por cursor.
+ */
+export async function listErrorLogs(filters: {
+  level?: string;
+  source?: string;
+  fingerprint?: string;
+  search?: string;
+  beforeErrorId?: number;
+  limit?: number;
+}): Promise<SystemErrorLogPage> {
+  /**
+   * Output:
+   * @returns SystemErrorLogPage — Resumen 24 h + entradas
+   */
+  return requestAuthedBackend<SystemErrorLogPage>({
+    path: `/platform/error-logs${toQueryString({
+      limit: filters.limit ?? 50,
+      before: filters.beforeErrorId,
+      level: filters.level,
+      source: filters.source,
+      fingerprint: filters.fingerprint,
+      q: filters.search,
+    })}`,
+  });
 }
 
 /**

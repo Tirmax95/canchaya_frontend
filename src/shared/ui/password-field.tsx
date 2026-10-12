@@ -1,9 +1,12 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import {
   getPasswordStrength,
   PASSWORD_MAX_BYTES,
+  PASSWORD_MIN_LENGTH,
   PASSWORD_RULES,
+  type PasswordRuleId,
   type PasswordStrength,
 } from "@/domain/password-policy";
 import { cn } from "@/shared/lib/cn";
@@ -31,12 +34,6 @@ interface PasswordFieldProps extends NativeInputProps {
   /** Muestra checklist de requisitos y medidor de fortaleza (solo para contraseñas nuevas). */
   showRequirements?: boolean;
 }
-
-const STRENGTH_LABELS: Record<Exclude<PasswordStrength, "empty">, string> = {
-  weak: "Débil",
-  fair: "Aceptable",
-  strong: "Fuerte",
-};
 
 const STRENGTH_FILLED_SEGMENTS: Record<PasswordStrength, number> = {
   empty: 0,
@@ -70,6 +67,7 @@ export function PasswordField({
   onBlur,
   ...inputProps
 }: PasswordFieldProps) {
+  const { t } = useI18n();
   const generatedId = useId();
   const fieldId = id ?? inputProps.name ?? generatedId;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,7 +116,7 @@ export function PasswordField({
     .filter(Boolean)
     .join(" ");
   const strength = getPasswordStrength(passwordValue);
-  const toggleLabel = isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña";
+  const toggleLabel = isPasswordVisible ? t("password.hide") : t("password.show");
 
   /**
    * Output:
@@ -170,7 +168,7 @@ export function PasswordField({
 
       {isCapsLockOn ? (
         <span id={`${fieldId}-capslock`} role="status" className="block text-xs text-flare">
-          Bloq Mayús está activado
+          {t("password.capsLock")}
         </span>
       ) : null}
 
@@ -204,7 +202,21 @@ interface PasswordRequirementsProps {
 /**
  * Propósito: Medidor de fortaleza + checklist de reglas en vivo, leído por lectores de pantalla.
  */
+const PASSWORD_RULE_KEYS: Record<PasswordRuleId, "password.ruleLength" | "password.ruleLowercase" | "password.ruleUppercase" | "password.ruleDigit"> = {
+  length: "password.ruleLength",
+  lowercase: "password.ruleLowercase",
+  uppercase: "password.ruleUppercase",
+  digit: "password.ruleDigit",
+};
+
+const STRENGTH_KEYS: Record<Exclude<PasswordStrength, "empty">, "password.weak" | "password.fair" | "password.strong"> = {
+  weak: "password.weak",
+  fair: "password.fair",
+  strong: "password.strong",
+};
+
 function PasswordRequirements({ listId, password, strength }: PasswordRequirementsProps) {
+  const { t } = useI18n();
   const filledSegments = STRENGTH_FILLED_SEGMENTS[strength];
 
   /**
@@ -228,7 +240,7 @@ function PasswordRequirements({ listId, password, strength }: PasswordRequiremen
           ))}
         </div>
         <span className="min-w-16 text-right text-xs text-mist/80" aria-live="polite">
-          {strength === "empty" ? "" : STRENGTH_LABELS[strength]}
+          {strength === "empty" ? "" : t(STRENGTH_KEYS[strength])}
         </span>
       </div>
       <ul className="grid gap-1 text-xs sm:grid-cols-2">
@@ -243,8 +255,13 @@ function PasswordRequirements({ listId, password, strength }: PasswordRequiremen
               )}
             >
               {isRuleMet ? <CheckIcon /> : <DotIcon />}
-              <span>{rule.label}</span>
-              <span className="sr-only">{isRuleMet ? "(cumplido)" : "(pendiente)"}</span>
+              <span>
+                {t(PASSWORD_RULE_KEYS[rule.id], {
+                  min: PASSWORD_MIN_LENGTH,
+                  max: PASSWORD_MAX_BYTES,
+                })}
+              </span>
+              <span className="sr-only">{isRuleMet ? t("password.met") : t("password.pending")}</span>
             </li>
           );
         })}

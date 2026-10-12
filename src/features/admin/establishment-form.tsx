@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { Establishment } from "@/domain/establishment";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
@@ -15,6 +16,7 @@ export function EstablishmentForm({
 }: {
   establishment?: Establishment;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,7 +48,7 @@ export function EstablishmentForm({
     );
     const payload = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo guardar la sede");
+      setError(payload.message ?? t("admin.saveVenueFailed"));
       setIsSubmitting(false);
       return;
     }
@@ -62,27 +64,27 @@ export function EstablishmentForm({
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
       <TextField
-        label="Nombre"
+        label={t("admin.tableName")}
         name="name"
         required
         defaultValue={establishment?.name}
       />
       <TextField
-        label="Dirección"
+        label={t("admin.tableAddress")}
         name="address"
         required
         defaultValue={establishment?.address}
       />
-      <TextField label="Teléfono" name="phone" defaultValue={establishment?.phone} />
+      <TextField label={t("admin.formPhone")} name="phone" defaultValue={establishment?.phone} />
       <TextField
-        label="URL de imagen"
+        label={t("admin.imageUrl")}
         name="image_establishment"
         required
         defaultValue={establishment?.imageEstablishment}
         placeholder="https://..."
       />
       <Button type="submit" isLoading={isSubmitting}>
-        {isEditing ? "Actualizar sede" : "Crear sede"}
+        {isEditing ? t("admin.submitUpdateVenue") : t("admin.submitCreateVenue")}
       </Button>
     </form>
   );

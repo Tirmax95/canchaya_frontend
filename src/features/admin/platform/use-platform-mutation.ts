@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -8,6 +9,7 @@ import { useState } from "react";
  * y refresca los datos del servidor al terminar. Único punto de fetch para el super admin.
  */
 export function usePlatformMutation() {
+  const { t } = useI18n();
   const router = useRouter();
   const [pendingActionKey, setPendingActionKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function usePlatformMutation() {
       });
       const payload = (await response.json().catch(() => ({}))) as TResponse & { message?: string };
       if (!response.ok) {
-        setErrorMessage(payload.message ?? "No se pudo completar la acción");
+        setErrorMessage(payload.message ?? t("platform.mutationFailed"));
         /**
          * Output:
          * @returns null — Error visible en `errorMessage`
@@ -45,7 +47,7 @@ export function usePlatformMutation() {
        */
       return payload;
     } catch {
-      setErrorMessage("Sin conexión con el servidor");
+      setErrorMessage(t("platform.mutationOffline"));
       /**
        * Output:
        * @returns null — Error de red

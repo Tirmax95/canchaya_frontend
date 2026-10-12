@@ -189,6 +189,10 @@ export const tenantActionSchema = z.discriminatedUnion("action", [
     commissionBps: z.coerce.number().int().min(0).max(MAX_COMMISSION_BPS),
     billingEmail: z.string().trim().email("Correo de cobro inválido").max(160).optional().or(z.literal("")),
   }),
+  z.object({
+    action: z.literal("online_payments"),
+    isEnabled: z.boolean(),
+  }),
 ]);
 
 export const userActionSchema = z.discriminatedUnion("action", [

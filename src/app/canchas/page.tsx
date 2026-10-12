@@ -1,6 +1,7 @@
 import { getVisibleFieldCatalog } from "@/application/catalog";
 import { shouldSeeOnlyOwnedVenues } from "@/core/auth/roles";
 import { getSession } from "@/core/auth/session";
+import { getTranslator } from "@/core/i18n/get-locale";
 import type { FieldCatalogItem } from "@/domain/field";
 import { CatalogSearch } from "@/features/catalog/catalog-search";
 import { FieldCard } from "@/features/catalog/field-card";
@@ -10,7 +11,17 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-export const metadata: Metadata = { title: "Canchas" };
+/**
+ * Propósito: Título del listado de canchas según el idioma activo.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("catalog.courtsKicker") };
+}
 
 /**
  * Propósito: Catálogo global de canchas con búsqueda local.
@@ -20,7 +31,11 @@ export default async function FieldsPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const [{ q }, session] = await Promise.all([searchParams, getSession()]);
+  const [{ t }, { q }, session] = await Promise.all([
+    getTranslator(),
+    searchParams,
+    getSession(),
+  ]);
   const isOwnerCatalog = shouldSeeOnlyOwnedVenues(session);
   let error: string | null = null;
   let fields: FieldCatalogItem[] = [];
@@ -36,7 +51,7 @@ export default async function FieldsPage({
         )
       : catalog;
   } catch {
-    error = "No pudimos cargar las canchas. Revisa que el API esté activo.";
+    error = t("catalog.courtsLoadError");
   }
 
   /**
@@ -46,22 +61,20 @@ export default async function FieldsPage({
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-12 sm:px-6">
       <PageHeader
-        kicker="Canchas"
-        title={isOwnerCatalog ? "Tus canchas" : "Horarios listos para reservar"}
+        kicker={t("catalog.courtsKicker")}
+        title={isOwnerCatalog ? t("catalog.courtsTitleOwner") : t("catalog.courtsTitle")}
         description={
-          isOwnerCatalog
-            ? "Solo ves las canchas de tu organización."
-            : "Compara precios y entra al calendario de cada cancha."
+          isOwnerCatalog ? t("catalog.courtsDescriptionOwner") : t("catalog.courtsDescription")
         }
       />
       <Suspense>
-        <CatalogSearch placeholder="Busca cancha o sede" />
+        <CatalogSearch placeholder={t("catalog.courtsSearch")} />
       </Suspense>
       {error ? <Alert>{error}</Alert> : null}
       {!error && fields.length === 0 ? (
         <EmptyState
-          title="No hay canchas publicadas"
-          description="Un administrador puede crearlas desde el panel."
+          title={t("catalog.courtsEmptyTitle")}
+          description={t("catalog.courtsEmptyDescription")}
         />
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

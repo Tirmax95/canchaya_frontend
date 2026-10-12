@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { TextField } from "@/shared/ui/input";
@@ -53,6 +54,7 @@ function resolvePostLoginPath(payload: LoginResponse, nextPath: string | null): 
  */
 export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAwaitingCode, setIsAwaitingCode] = useState(false);
@@ -71,7 +73,7 @@ export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
     const payload = (await response.json().catch(() => ({}))) as LoginResponse;
 
     if (!response.ok) {
-      setError(payload.message ?? "No se pudo iniciar sesión");
+      setError(payload.message ?? t("auth.loginFailed"));
       setIsSubmitting(false);
       /**
        * Output:
@@ -125,12 +127,9 @@ export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
     return (
       <form onSubmit={handleCodeSubmit} className="space-y-5">
         {error ? <Alert>{error}</Alert> : null}
-        <p className="text-sm text-mist">
-          Abre tu app autenticadora y escribe el código de 6 dígitos. Si perdiste el teléfono,
-          usa uno de tus códigos de respaldo.
-        </p>
+        <p className="text-sm text-mist">{t("auth.twoFactorHint")}</p>
         <TextField
-          label="Código de verificación"
+          label={t("auth.verificationCode")}
           name="code"
           inputMode="text"
           autoComplete="one-time-code"
@@ -140,7 +139,7 @@ export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
           placeholder="123456"
         />
         <Button type="submit" className="w-full" isLoading={isSubmitting}>
-          Verificar
+          {t("auth.verify")}
         </Button>
         <button
           type="button"
@@ -150,7 +149,7 @@ export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
             setError(null);
           }}
         >
-          Usar otra cuenta
+          {t("auth.useAnotherAccount")}
         </button>
       </form>
     );
@@ -164,7 +163,7 @@ export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
     <form onSubmit={handleCredentialsSubmit} className="space-y-5">
       {error ? <Alert>{error}</Alert> : null}
       <TextField
-        label="Correo"
+        label={t("auth.email")}
         name="email"
         type="email"
         autoComplete="username"
@@ -172,23 +171,23 @@ export function LoginForm({ nextPath = null }: { nextPath?: string | null }) {
         placeholder="tu@correo.com"
       />
       <PasswordField
-        label="Contraseña"
+        label={t("auth.password")}
         name="password"
         autoComplete="current-password"
         required
       />
       <div className="-mt-2 text-right">
         <Link href="/recuperar" className="text-sm text-mist hover:text-lime">
-          ¿Olvidaste tu contraseña?
+          {t("auth.forgotPassword")}
         </Link>
       </div>
       <Button type="submit" className="w-full" isLoading={isSubmitting}>
-        Entrar a la cancha
+        {t("auth.enterPitch")}
       </Button>
       <p className="text-center text-sm text-mist">
-        ¿Aún no juegas aquí?{" "}
+        {t("auth.noAccountYet")}{" "}
         <Link href="/registro" className="text-lime hover:underline">
-          Crea tu cuenta
+          {t("auth.createYourAccount")}
         </Link>
       </p>
     </form>

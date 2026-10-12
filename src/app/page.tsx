@@ -1,3 +1,4 @@
+import { getTranslator } from "@/core/i18n/get-locale";
 import { FeaturedEstablishments } from "@/features/catalog/featured-establishments";
 import { ButtonLink } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/spinner";
@@ -7,7 +8,14 @@ import { Suspense } from "react";
 /**
  * Propósito: Landing de producto. El hero no espera al API; el catálogo va en Suspense.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const { t } = await getTranslator();
+  const steps = [
+    ["01", t("home.step1Title"), t("home.step1Body")],
+    ["02", t("home.step2Title"), t("home.step2Body")],
+    ["03", t("home.step3Title"), t("home.step3Body")],
+  ] as const;
+
   /**
    * Output:
    * @returns JSX.Element — Home de marketing + sedes
@@ -18,22 +26,21 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-lime">
-              Fútbol · Pádel · Basket
+              {t("home.kicker")}
             </p>
             <h1 className="mt-4 max-w-xl font-display text-6xl leading-[0.9] text-bone sm:text-7xl">
-              Reserva tu cancha. Juega ya.
+              {t("home.title")}
             </h1>
             <p className="mt-6 max-w-lg text-base leading-7 text-mist">
-              CanchaYa conecta jugadores con sedes reales. Elige horario, confirma
-              y llega listo al partido. Sin llamadas, sin WhatsApp eterno.
+              {t("home.body")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/partidos">Ver partidos</ButtonLink>
+              <ButtonLink href="/partidos">{t("home.seeMatches")}</ButtonLink>
               <ButtonLink href="/establecimientos" variant="secondary">
-                Explorar sedes
+                {t("home.exploreVenues")}
               </ButtonLink>
               <ButtonLink href="/registro" variant="ghost">
-                Crear cuenta
+                {t("home.createAccount")}
               </ButtonLink>
             </div>
           </div>
@@ -47,10 +54,8 @@ export default function HomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
             <div className="absolute bottom-0 p-6">
-              <p className="font-display text-3xl text-bone">Hoy hay partido.</p>
-              <p className="mt-1 text-sm text-mist">
-                Horarios de 6:00 a 23:00 · Confirmación al instante
-              </p>
+              <p className="font-display text-3xl text-bone">{t("home.heroCardTitle")}</p>
+              <p className="mt-1 text-sm text-mist">{t("home.heroCardBody")}</p>
             </div>
           </div>
         </div>
@@ -58,11 +63,7 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="grid gap-6 md:grid-cols-3">
-          {[
-            ["01", "Encuentra", "Filtra sedes y canchas por nombre o zona."],
-            ["02", "Elige horario", "Mira huecos libres y reserva 1 a 3 horas."],
-            ["03", "Llega y juega", "La sede confirma. Tú solo traes las ganas."],
-          ].map(([step, title, copy]) => (
+          {steps.map(([step, title, copy]) => (
             <article
               key={step}
               className="rounded-[28px] border border-white/8 bg-pitch p-6"
@@ -79,15 +80,15 @@ export default function HomePage() {
         <div className="mb-8 flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-lime">
-              En cartelera
+              {t("home.featuredKicker")}
             </p>
-            <h2 className="mt-2 font-display text-4xl text-bone">Sedes listas</h2>
+            <h2 className="mt-2 font-display text-4xl text-bone">{t("home.featuredTitle")}</h2>
           </div>
           <Link href="/establecimientos" className="text-sm text-lime hover:underline">
-            Ver todas
+            {t("home.seeAll")}
           </Link>
         </div>
-        <Suspense fallback={<Spinner label="Buscando sedes…" />}>
+        <Suspense fallback={<Spinner label={t("home.searchingVenues")} />}>
           <FeaturedEstablishments />
         </Suspense>
       </section>

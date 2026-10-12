@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import type { VenueMapEstablishment, VenueMapField } from "@/application/venue-map";
 import type { CourtSnapshot } from "@/domain/venue-occupancy";
 import { CourtTile } from "@/features/admin/venue-map/court-tile";
@@ -191,6 +192,7 @@ export function IsometricVenue({
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
 }) {
+  const { t } = useI18n();
   const { elementRef: viewportRef, size: viewportSize } = useElementSize<HTMLDivElement>();
   const [spinDegrees, setSpinDegrees] = useState(BASE_SPIN_DEGREES);
   const [zoomFactor, setZoomFactor] = useState(1);
@@ -373,7 +375,7 @@ export function IsometricVenue({
                 <div className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1 shadow-[0_8px_20px_rgba(0,0,0,0.45)] ring-1 ring-lime/40">
                   <span className="size-1.5 rounded-full bg-lime" />
                   <span className="font-display text-[11px] font-bold tracking-wide text-bone">
-                    {establishment?.name ?? "Tu sede"}
+                    {establishment?.name ?? t("venueMap.yourVenue")}
                   </span>
                 </div>
               </Upright>
@@ -423,32 +425,32 @@ export function IsometricVenue({
         <button
           type="button"
           onClick={onToggleFullscreen}
-          title={isFullscreen ? "Salir de pantalla completa (Esc)" : "Pantalla completa"}
-          aria-label={isFullscreen ? "Salir de pantalla completa" : "Ver en pantalla completa"}
+          title={isFullscreen ? t("venueMap.exitFullscreenTitle") : t("venueMap.enterFullscreenTitle")}
+          aria-label={isFullscreen ? t("venueMap.exitFullscreenAria") : t("venueMap.enterFullscreenAria")}
           aria-pressed={isFullscreen}
           className="mb-1 flex size-9 items-center justify-center rounded-xl bg-lime text-ink transition hover:bg-flare focus-visible:outline-2 focus-visible:outline-lime"
         >
           <FullscreenIcon isFullscreen={isFullscreen} />
         </button>
         <CameraButton
-          label="Acercar"
+          label={t("venueMap.zoomIn")}
           onClick={() => setZoomFactor((current) => Math.min(MAX_ZOOM_FACTOR, current * ZOOM_STEP))}
         >
           +
         </CameraButton>
         <CameraButton
-          label="Alejar"
+          label={t("venueMap.zoomOut")}
           onClick={() => setZoomFactor((current) => Math.max(MIN_ZOOM_FACTOR, current / ZOOM_STEP))}
         >
           −
         </CameraButton>
-        <CameraButton label="Girar a la izquierda" onClick={() => setSpinDegrees((current) => current - 90)}>
+        <CameraButton label={t("venueMap.rotateLeft")} onClick={() => setSpinDegrees((current) => current - 90)}>
           ↺
         </CameraButton>
-        <CameraButton label="Girar a la derecha" onClick={() => setSpinDegrees((current) => current + 90)}>
+        <CameraButton label={t("venueMap.rotateRight")} onClick={() => setSpinDegrees((current) => current + 90)}>
           ↻
         </CameraButton>
-        <CameraButton label="Centrar vista" onClick={resetCamera}>
+        <CameraButton label={t("venueMap.centerView")} onClick={resetCamera}>
           ⌂
         </CameraButton>
       </div>
@@ -460,6 +462,7 @@ export function IsometricVenue({
  * Propósito: Loseta punteada en el terreno para dar de alta una cancha en esta sede.
  */
 function CreateCourtTile({ href, x, y }: { href: string; x: number; y: number }) {
+  const { t } = useI18n();
   /**
    * Output:
    * @returns JSX.Element — Enlace plano en el plano isométrico
@@ -467,13 +470,13 @@ function CreateCourtTile({ href, x, y }: { href: string; x: number; y: number })
   return (
     <Link
       href={href}
-      aria-label="Agregar una cancha a esta sede"
+      aria-label={t("venueMap.addCourtScene")}
       className="group absolute flex items-center justify-center rounded-[4px] border-2 border-dashed border-lime/35 bg-lime/[0.03] transition hover:border-lime hover:bg-lime/10"
       style={{ left: x, top: y, width: COURT_WIDTH, height: COURT_DEPTH, transform: "translateZ(1px)" }}
     >
       <span className="flex flex-col items-center gap-1 text-lime/70 group-hover:text-lime">
         <span className="font-display text-4xl leading-none">+</span>
-        <span className="text-xs font-semibold uppercase tracking-[0.2em]">Nueva cancha</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.2em]">{t("venueMap.newCourtTile")}</span>
       </span>
     </Link>
   );

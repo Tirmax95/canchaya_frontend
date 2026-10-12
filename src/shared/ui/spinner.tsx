@@ -1,7 +1,13 @@
+"use client";
+
+import { useI18n } from "@/core/i18n/provider";
+
 /**
  * Propósito: Indicador de carga accesible para transiciones de página.
  */
-export function Spinner({ label = "Cargando" }: { label?: string }) {
+export function Spinner({ label }: { label?: string }) {
+  const { t } = useI18n();
+  const resolvedLabel = label ?? t("common.loadingShort");
   /**
    * Output:
    * @returns JSX.Element — Spinner con texto para lectores de pantalla
@@ -9,7 +15,7 @@ export function Spinner({ label = "Cargando" }: { label?: string }) {
   return (
     <div className="flex items-center justify-center gap-3 py-16 text-mist">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-lime/30 border-t-lime" />
-      <span className="text-sm">{label}</span>
+      <span className="text-sm">{resolvedLabel}</span>
     </div>
   );
 }

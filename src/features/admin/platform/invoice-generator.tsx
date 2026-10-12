@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/core/i18n/provider";
 import { formatBillingPeriod, type InvoiceGenerationResult } from "@/domain/platform";
 import { usePlatformMutation } from "@/features/admin/platform/use-platform-mutation";
 import { formatMoney } from "@/shared/lib/money";
@@ -18,6 +19,7 @@ export function InvoiceGenerator({
   selectablePeriods: string[];
   defaultPeriod: string;
 }) {
+  const { t, intlLocale } = useI18n();
   const { runMutation, pendingActionKey, errorMessage } = usePlatformMutation();
   const [generationResult, setGenerationResult] = useState<InvoiceGenerationResult | null>(null);
 
@@ -47,7 +49,7 @@ export function InvoiceGenerator({
       {errorMessage ? <Alert>{errorMessage}</Alert> : null}
       <div className="grid gap-3 sm:grid-cols-[220px_1fr_auto] sm:items-end">
         <label className="block space-y-1.5">
-          <span className="text-sm font-medium text-mist">Mes a facturar</span>
+          <span className="text-sm font-medium text-mist">{t("platform.billingMonth")}</span>
           <select
             name="period"
             defaultValue={defaultPeriod}
@@ -55,34 +57,41 @@ export function InvoiceGenerator({
           >
             {selectablePeriods.map((period) => (
               <option key={period} value={period} className="bg-ink">
-                {formatBillingPeriod(period)}
+                {formatBillingPeriod(period, intlLocale)}
               </option>
             ))}
           </select>
         </label>
         <label className="block space-y-1.5">
-          <span className="text-sm font-medium text-mist">Nota en la factura (opcional)</span>
+          <span className="text-sm font-medium text-mist">{t("platform.invoiceNote")}</span>
           <input
             name="notes"
             maxLength={500}
-            placeholder="Ej. Incluye ajuste de tarifa"
+            placeholder={t("platform.notesPlaceholder")}
             className="w-full rounded-2xl border border-white/10 bg-ink/40 px-4 py-3 text-bone outline-none focus:border-lime/70"
           />
         </label>
         <Button type="submit" isLoading={pendingActionKey === "generate"}>
-          Emitir facturas
+          {t("platform.issueInvoicesSubmit")}
         </Button>
       </div>
       {generationResult ? (
         <p role="status" className="rounded-2xl bg-lime/10 px-4 py-3 text-sm text-bone">
           {generationResult.created.length > 0
-            ? `Se emitieron ${generationResult.created.length} facturas por ${formatMoney(createdTotal)}.`
-            : "No se emitieron facturas nuevas."}{" "}
+            ? t("platform.invoicesIssued", {
+                count: generationResult.created.length,
+                amount: formatMoney(createdTotal, intlLocale, t("common.consult")),
+              })
+            : t("platform.noNewInvoices")}{" "}
           {generationResult.skippedAlreadyInvoiced > 0
-            ? `${generationResult.skippedAlreadyInvoiced} tenant(s) ya tenían factura de este mes. `
+            ? t("platform.skippedAlreadyInvoiced", {
+                count: generationResult.skippedAlreadyInvoiced,
+              }) + " "
             : ""}
           {generationResult.skippedNothingToBill > 0
-            ? `${generationResult.skippedNothingToBill} sin nada que cobrar (plan en $0 y sin comisión).`
+            ? t("platform.skippedNothingToBill", {
+                count: generationResult.skippedNothingToBill,
+              })
             : ""}
         </p>
       ) : null}

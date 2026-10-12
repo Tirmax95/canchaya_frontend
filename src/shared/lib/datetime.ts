@@ -1,14 +1,38 @@
 import { APP_LOCALE, APP_TIMEZONE } from "@/core/config/env";
 
 /**
+ * Propósito: Encabezado de día para agendas agrupadas (lunes 13 oct / Monday, Oct 13).
+ */
+export function formatDayHeading(civilDate: string, locale: string = APP_LOCALE): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(civilDate)) {
+    /**
+     * Output:
+     * @returns string — El valor original si no es YYYY-MM-DD
+     */
+    return civilDate;
+  }
+  const formatted = new Intl.DateTimeFormat(locale, {
+    timeZone: APP_TIMEZONE,
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(`${civilDate}T12:00:00-05:00`));
+  /**
+   * Output:
+   * @returns string — Día capitalizado en el idioma activo
+   */
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+/**
  * Propósito: Formatea un instante ISO en fecha/hora local de Bogotá.
  */
-export function formatDateTime(iso: string): string {
+export function formatDateTime(iso: string, locale: string = APP_LOCALE): string {
   /**
    * Output:
    * @returns string — Fecha y hora localizadas
    */
-  return new Intl.DateTimeFormat(APP_LOCALE, {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: APP_TIMEZONE,
     dateStyle: "medium",
     timeStyle: "short",

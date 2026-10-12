@@ -250,7 +250,6 @@ export async function logoutRemote(sessionId: string): Promise<void> {
   await requestBackend<AuthEnvelope>({
     path: "/auth/logout",
     method: "POST",
-    body: { sessionId },
     sessionId,
   });
   /**

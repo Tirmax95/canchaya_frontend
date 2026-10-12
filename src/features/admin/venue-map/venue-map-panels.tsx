@@ -1,5 +1,9 @@
 "use client";
 
+import { COURT_STATUS_KEYS } from "@/core/i18n/label-keys";
+import type { MessageKey } from "@/core/i18n/messages";
+import { useI18n } from "@/core/i18n/provider";
+import type { TranslateFn } from "@/core/i18n/translate";
 import type { VenueMapEstablishment, VenueMapField } from "@/application/venue-map";
 import { BOOKING_CLOSE_HOUR, BOOKING_OPEN_HOUR } from "@/domain/booking";
 import {
@@ -52,7 +56,9 @@ function formatReservationRange(reservation: OccupancyReservation): string {
  * Propósito: Chip con punto de color del estado en vivo de una cancha.
  */
 function CourtStatusChip({ snapshot }: { snapshot: Pick<CourtSnapshot, "status"> }) {
+  const { t } = useI18n();
   const presentation = COURT_STATUS_PRESENTATION[snapshot.status];
+  const statusLabel = t(COURT_STATUS_KEYS[snapshot.status]);
   /**
    * Output:
    * @returns JSX.Element — Chip de estado
@@ -65,7 +71,7 @@ function CourtStatusChip({ snapshot }: { snapshot: Pick<CourtSnapshot, "status">
       )}
     >
       <span className={cn("size-1.5 rounded-full", presentation.dotClassName)} />
-      {presentation.label}
+      {statusLabel}
     </span>
   );
 }
@@ -98,26 +104,27 @@ export function VenueKpiStrip({
   summary: VenueOccupancySummary;
   referenceLabel: string;
 }) {
+  const { t } = useI18n();
   const kpis = [
     {
-      label: "Canchas en juego",
+      label: t("venueMap.kpiCourtsInPlay"),
       value: `${summary.occupiedCourtCount}`,
       suffix: `/ ${summary.courtCount}`,
       hint: referenceLabel,
       glyph: "◉",
     },
     {
-      label: "Reservas del día",
+      label: t("venueMap.kpiDayReservations"),
       value: `${summary.reservationCount}`,
       suffix: "",
-      hint: `${summary.pendingReservationCount} por confirmar`,
+      hint: t("venueMap.kpiPendingConfirm", { count: summary.pendingReservationCount }),
       glyph: "▦",
     },
     {
-      label: "Ocupación del día",
+      label: t("venueMap.kpiDayOccupancy"),
       value: `${Math.round(summary.occupancyRatio * 100)}%`,
       suffix: "",
-      hint: `${summary.bookedHours.toFixed(1)} h reservadas`,
+      hint: t("venueMap.kpiBookedHours", { hours: summary.bookedHours.toFixed(1) }),
       glyph: "◔",
     },
   ];
@@ -176,6 +183,8 @@ export function VenueDetailPanel({
   createCourtHref: string | null;
   permissions: VenueMapPermissions;
 }) {
+  const { t, intlLocale } = useI18n();
+  const consultLabel = t("common.consult");
   const freeCourtCount = summary.courtCount - summary.occupiedCourtCount;
 
   /**
@@ -194,10 +203,12 @@ export function VenueDetailPanel({
           ⚽
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-lime">Sede</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-lime">
+            {t("venueMap.venueKicker")}
+          </p>
           {establishments.length > 1 ? (
             <select
-              aria-label="Sede a visualizar"
+              aria-label={t("venueMap.selectVenue")}
               value={selectedEstablishment.establishmentId}
               onChange={(event) => onSelectEstablishment(Number(event.target.value))}
               className="mt-0.5 w-full truncate rounded-lg bg-transparent font-display text-lg text-bone outline-none focus-visible:ring-2 focus-visible:ring-lime"
@@ -220,8 +231,8 @@ export function VenueDetailPanel({
         {createCourtHref ? (
           <Link
             href={createCourtHref}
-            title="Agregar cancha"
-            aria-label="Agregar cancha a esta sede"
+            title={t("venueMap.addCourt")}
+            aria-label={t("venueMap.addCourtAria")}
             className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/12 text-lg text-bone hover:border-lime/50 hover:text-lime"
           >
             +
@@ -236,16 +247,19 @@ export function VenueDetailPanel({
             isOpenAtReference ? "bg-lime/15 text-lime" : "bg-white/8 text-mist",
           )}
         >
-          {isOpenAtReference ? "Abierta" : "Cerrada"}
+          {isOpenAtReference ? t("venueMap.openNow") : t("venueMap.closedNow")}
         </span>
         <span>
-          {summary.occupiedCourtCount} en juego · {freeCourtCount} libres
+          {t("venueMap.inPlayFree", {
+            occupied: summary.occupiedCourtCount,
+            free: freeCourtCount,
+          })}
         </span>
       </div>
 
       <div>
         <div className="flex justify-between text-[11px] text-mist">
-          <span>Ocupación del día</span>
+          <span>{t("venueMap.kpiDayOccupancy")}</span>
           <span className="text-bone">{Math.round(summary.occupancyRatio * 100)}%</span>
         </div>
         <ProgressBar ratio={summary.occupancyRatio} className="mt-1.5" />
@@ -253,11 +267,13 @@ export function VenueDetailPanel({
 
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-white/5 p-3">
-          <p className="text-[11px] text-mist">Ingresos est.</p>
-          <p className="mt-1 truncate font-display text-base text-bone">{formatMoney(dayRevenue)}</p>
+          <p className="text-[11px] text-mist">{t("venueMap.estimatedRevenue")}</p>
+          <p className="mt-1 truncate font-display text-base text-bone">
+            {formatMoney(dayRevenue, intlLocale, consultLabel)}
+          </p>
         </div>
         <div className="rounded-xl bg-white/5 p-3">
-          <p className="text-[11px] text-mist">Por confirmar</p>
+          <p className="text-[11px] text-mist">{t("venueMap.pendingConfirmShort")}</p>
           <p className="mt-1 font-display text-xl text-clay">{summary.pendingReservationCount}</p>
         </div>
       </div>
@@ -271,8 +287,8 @@ export function VenueDetailPanel({
       ) : (
         <p className="rounded-xl border border-dashed border-white/12 p-4 text-center text-sm text-mist">
           {permissions.canManageFields
-            ? "Esta sede aún no tiene canchas. Usa la loseta «Nueva cancha» del mapa."
-            : "Esta sede aún no tiene canchas."}
+            ? t("venueMap.noCourtsHintMap")
+            : t("venueMap.noCourtsHint")}
         </p>
       )}
     </aside>
@@ -291,6 +307,7 @@ function SelectedCourtDetail({
   snapshot: CourtSnapshot;
   permissions: VenueMapPermissions;
 }) {
+  const { t, intlLocale } = useI18n();
   /**
    * Output:
    * @returns JSX.Element — Detalle de cancha
@@ -299,8 +316,12 @@ function SelectedCourtDetail({
     <div className="space-y-3 border-t border-white/8 pt-4">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate font-display text-lg text-bone">Cancha {field.numberField}</p>
-          <p className="text-xs text-mist">{formatMoney(field.basePricePerHour)} / hora</p>
+          <p className="truncate font-display text-lg text-bone">
+            {t("venueMap.courtHeading", { number: field.numberField })}
+          </p>
+          <p className="text-xs text-mist">
+            {formatMoney(field.basePricePerHour, intlLocale, t("common.consult"))} {t("catalog.perHour")}
+          </p>
         </div>
         <CourtStatusChip snapshot={snapshot} />
       </div>
@@ -311,30 +332,40 @@ function SelectedCourtDetail({
       {snapshot.currentReservation ? (
         <div className="rounded-xl bg-white/5 p-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-mist">Reserva #{snapshot.currentReservation.reservationId}</span>
+            <span className="text-mist">
+              {t("venueMap.reservationHash", { id: snapshot.currentReservation.reservationId })}
+            </span>
             <span className="font-semibold text-bone">
               {formatReservationRange(snapshot.currentReservation)}
             </span>
           </div>
           <ProgressBar ratio={snapshot.matchProgress} className="mt-2" />
           <p className="mt-1.5 text-[11px] text-mist">
-            {Math.round(snapshot.matchProgress * 100)}% del partido jugado
+            {t("venueMap.matchProgress", {
+              percent: Math.round(snapshot.matchProgress * 100),
+            })}
           </p>
         </div>
       ) : null}
 
       <div className="flex items-center justify-between text-xs text-mist">
-        <span>Siguiente</span>
+        <span>{t("venueMap.nextLabel")}</span>
         <span className="text-bone">
           {snapshot.nextReservation
-            ? `${formatReservationRange(snapshot.nextReservation)} · en ${formatMinutes(snapshot.minutesUntilNext ?? 0)}`
-            : "Sin más reservas"}
+            ? t("venueMap.rangeInDuration", {
+                range: formatReservationRange(snapshot.nextReservation),
+                duration: formatMinutes(snapshot.minutesUntilNext ?? 0, t),
+              })
+            : t("venueMap.noMoreReservations")}
         </span>
       </div>
       <div className="flex items-center justify-between text-xs text-mist">
-        <span>Reservado hoy</span>
+        <span>{t("venueMap.bookedToday")}</span>
         <span className="text-bone">
-          {snapshot.bookedHours.toFixed(1)} h · {snapshot.reservationCount} reservas
+          {t("venueMap.bookedTodayValue", {
+            hours: snapshot.bookedHours.toFixed(1),
+            count: snapshot.reservationCount,
+          })}
         </span>
       </div>
 
@@ -345,7 +376,7 @@ function SelectedCourtDetail({
               href={`/admin/canchas/${field.id}`}
               className="flex-1 rounded-full border border-white/12 px-3 py-2 text-center text-xs font-semibold text-bone hover:border-lime/50"
             >
-              Editar cancha
+              {t("venueMap.editCourtLink")}
             </Link>
           ) : null}
           {permissions.canViewReservations ? (
@@ -353,7 +384,7 @@ function SelectedCourtDetail({
               href="/admin/reservas"
               className="flex-1 rounded-full bg-lime px-3 py-2 text-center text-xs font-semibold text-ink hover:bg-flare"
             >
-              Ver reservas
+              {t("venueMap.viewReservationsLink")}
             </Link>
           ) : null}
         </div>
@@ -365,13 +396,13 @@ function SelectedCourtDetail({
 /**
  * Propósito: Formatea minutos como "45 min" o "1 h 20 min".
  */
-function formatMinutes(totalMinutes: number): string {
+function formatMinutes(totalMinutes: number, t: TranslateFn): string {
   if (totalMinutes < 60) {
     /**
      * Output:
      * @returns string — Minutos
      */
-    return `${totalMinutes} min`;
+    return t("venueMap.minutesOnly", { minutes: totalMinutes });
   }
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -379,7 +410,9 @@ function formatMinutes(totalMinutes: number): string {
    * Output:
    * @returns string — Horas y minutos
    */
-  return minutes ? `${hours} h ${minutes} min` : `${hours} h`;
+  return minutes
+    ? t("venueMap.hoursMinutes", { hours, minutes })
+    : t("venueMap.hoursOnly", { hours });
 }
 
 /**
@@ -411,6 +444,7 @@ export function DayTimelinePanel({
   selectedCourt: PlacedCourt | null;
   selectedCourtReservations: OccupancyReservation[];
 }) {
+  const { t } = useI18n();
   const hourTicks = Array.from(
     { length: OPERATING_HOURS_PER_DAY / HOUR_TICK_STEP + 1 },
     (_, tickIndex) => BOOKING_OPEN_HOUR + tickIndex * HOUR_TICK_STEP,
@@ -429,15 +463,17 @@ export function DayTimelinePanel({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="font-display text-base text-bone">Agenda del día</h3>
+          <h3 className="font-display text-base text-bone">{t("venueMap.dayAgenda")}</h3>
           {selectedCourt ? (
-            <span className="text-xs text-mist">· Cancha {selectedCourt.field.numberField}</span>
+            <span className="text-xs text-mist">
+              {t("venueMap.courtDot", { number: selectedCourt.field.numberField })}
+            </span>
           ) : null}
         </div>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            aria-label="Día anterior"
+            aria-label={t("venueMap.previousDay")}
             onClick={() => onChangeDay(-1)}
             className="flex size-7 items-center justify-center rounded-lg border border-white/10 text-bone hover:border-lime/50"
           >
@@ -445,14 +481,14 @@ export function DayTimelinePanel({
           </button>
           <input
             type="date"
-            aria-label="Día a visualizar"
+            aria-label={t("venueMap.pickDay")}
             value={dayIsoDate}
             onChange={(event) => event.target.value && onChangeDay(event.target.value)}
             className="rounded-lg border border-white/10 bg-transparent px-2 py-1 text-xs text-bone [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-lime"
           />
           <button
             type="button"
-            aria-label="Día siguiente"
+            aria-label={t("venueMap.nextDay")}
             onClick={() => onChangeDay(1)}
             className="flex size-7 items-center justify-center rounded-lg border border-white/10 text-bone hover:border-lime/50"
           >
@@ -469,7 +505,7 @@ export function DayTimelinePanel({
               )}
             >
               <span className={cn("size-1.5 rounded-full bg-lime", isLive && "animate-iso-glow")} />
-              {isLive ? "En vivo" : "Volver a ahora"}
+              {isLive ? t("venueMap.live") : t("venueMap.backToNow")}
             </button>
           ) : null}
         </div>
@@ -534,7 +570,7 @@ export function DayTimelinePanel({
 
         <input
           type="range"
-          aria-label="Hora a visualizar en el mapa"
+          aria-label={t("venueMap.pickHour")}
           aria-valuetext={formatHourOfDay(referenceHour)}
           min={BOOKING_OPEN_HOUR}
           max={BOOKING_CLOSE_HOUR}
@@ -550,10 +586,10 @@ export function DayTimelinePanel({
 
 type CourtListFilter = "all" | "occupied" | "free";
 
-const COURT_LIST_FILTERS: Array<{ id: CourtListFilter; label: string }> = [
-  { id: "all", label: "Todas" },
-  { id: "occupied", label: "En juego" },
-  { id: "free", label: "Libres" },
+const COURT_LIST_FILTERS: Array<{ id: CourtListFilter; labelKey: MessageKey }> = [
+  { id: "all", labelKey: "venueMap.filterAll" },
+  { id: "occupied", labelKey: "venueMap.filterOccupied" },
+  { id: "free", labelKey: "venueMap.filterFree" },
 ];
 
 /**
@@ -568,6 +604,7 @@ export function CourtListPanel({
   selectedFieldId: number | null;
   onSelectField: (fieldId: number) => void;
 }) {
+  const { t } = useI18n();
   const [activeFilter, setActiveFilter] = useState<CourtListFilter>("all");
   const occupiedCourts = courts.filter((court) => isCourtOccupied(court.snapshot));
   const freeCourts = courts.filter((court) => !isCourtOccupied(court.snapshot));
@@ -589,7 +626,7 @@ export function CourtListPanel({
         "flex flex-col p-3 lg:absolute lg:bottom-4 lg:right-4 lg:z-10 lg:h-[184px] lg:w-[328px]",
       )}
     >
-      <div role="tablist" aria-label="Filtrar canchas" className="flex gap-1 rounded-xl bg-white/5 p-1">
+      <div role="tablist" aria-label={t("venueMap.filterCourts")} className="flex gap-1 rounded-xl bg-white/5 p-1">
         {COURT_LIST_FILTERS.map((filter) => (
           <button
             key={filter.id}
@@ -602,14 +639,14 @@ export function CourtListPanel({
               activeFilter === filter.id ? "bg-bone text-ink" : "text-mist hover:text-bone",
             )}
           >
-            {filter.label} <span className="opacity-60">{courtsByFilter[filter.id].length}</span>
+            {t(filter.labelKey)} <span className="opacity-60">{courtsByFilter[filter.id].length}</span>
           </button>
         ))}
       </div>
 
       <ul className="mt-2 flex-1 space-y-1 overflow-y-auto pr-1">
         {visibleCourts.length === 0 ? (
-          <li className="py-6 text-center text-xs text-mist">No hay canchas en este estado.</li>
+          <li className="py-6 text-center text-xs text-mist">{t("venueMap.noCourtsInFilter")}</li>
         ) : (
           visibleCourts.map(({ field, snapshot }) => (
             <li key={field.id}>
@@ -622,8 +659,10 @@ export function CourtListPanel({
                 )}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-bone">Cancha {field.numberField}</p>
-                  <p className="truncate text-[11px] text-mist">{describeCourtRow(snapshot)}</p>
+                  <p className="truncate text-sm font-semibold text-bone">
+                    {t("venueMap.courtHeading", { number: field.numberField })}
+                  </p>
+                  <p className="truncate text-[11px] text-mist">{describeCourtRow(snapshot, t)}</p>
                 </div>
                 <div className="flex w-[104px] flex-col items-end gap-1">
                   <CourtStatusChip snapshot={snapshot} />
@@ -642,26 +681,29 @@ export function CourtListPanel({
 /**
  * Propósito: Subtítulo de cada fila del desglose según el estado de la cancha.
  */
-function describeCourtRow(snapshot: CourtSnapshot): string {
+function describeCourtRow(snapshot: CourtSnapshot, t: TranslateFn): string {
   if (snapshot.currentReservation) {
     /**
      * Output:
      * @returns string — Rango del partido en curso
      */
-    return `Partido ${formatReservationRange(snapshot.currentReservation)}`;
+    return t("venueMap.matchRange", {
+      range: formatReservationRange(snapshot.currentReservation),
+    });
   }
   if (snapshot.nextReservation) {
     /**
      * Output:
      * @returns string — Próxima reserva y cuánto falta
      */
-    return `Próxima ${formatHourOfDay(toLocalHourOfDay(snapshot.nextReservation.startTime))} · en ${formatMinutes(
-      snapshot.minutesUntilNext ?? 0,
-    )}`;
+    return t("venueMap.upcomingAt", {
+      hour: formatHourOfDay(toLocalHourOfDay(snapshot.nextReservation.startTime)),
+      duration: formatMinutes(snapshot.minutesUntilNext ?? 0, t),
+    });
   }
   /**
    * Output:
    * @returns string — Sin reservas pendientes
    */
-  return "Disponible el resto del día";
+  return t("venueMap.availableRestOfDay");
 }

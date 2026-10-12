@@ -45,10 +45,14 @@ export async function toReservationViews(
     const establishment = field
       ? establishmentsById.get(field.establishmentId)
       : undefined;
+    const organizationId = establishment?.organizationId ?? null;
     return {
       ...reservation,
       fieldName: field ? `Cancha ${field.numberField}` : `Cancha #${reservation.fieldId}`,
       establishmentName: establishment?.name ?? "Sede",
+      establishmentId: field?.establishmentId ?? establishment?.establishmentId ?? null,
+      organizationId: organizationId && organizationId > 0 ? organizationId : null,
+      organizationName: establishment?.organizationName ?? null,
       priceEstimate: field
         ? estimateReservationPrice(
             reservation.startTime,

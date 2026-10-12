@@ -1,8 +1,8 @@
-import {
-  INVOICE_STATUS_LABELS,
-  type InvoiceStatusFilter,
-  type PickupRevenue,
-} from "@/domain/platform";
+"use client";
+
+import { useI18n } from "@/core/i18n/provider";
+import { INVOICE_STATUS_KEYS } from "@/core/i18n/label-keys";
+import type { InvoiceStatusFilter, PickupRevenue } from "@/domain/platform";
 import { cn } from "@/shared/lib/cn";
 import { formatMoney } from "@/shared/lib/money";
 
@@ -25,6 +25,48 @@ const INVOICE_STATUS_TONES: Record<InvoiceStatusFilter, PillTone> = {
 /**
  * Propósito: Chip de estado genérico del panel.
  */
+/**
+ * Propósito: Switch accesible del panel (encender/apagar sin formularios extra).
+ */
+export function AdminToggleSwitch({
+  label,
+  isOn,
+  disabled,
+  onToggle,
+}: {
+  label: string;
+  isOn: boolean;
+  disabled: boolean;
+  onToggle: (next: boolean) => void;
+}) {
+  /**
+   * Output:
+   * @returns JSX.Element — Switch
+   */
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isOn}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onToggle(!isOn)}
+      className={cn(
+        "relative h-7 w-12 shrink-0 rounded-full transition",
+        isOn ? "bg-lime" : "bg-white/15",
+        disabled && "opacity-50",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 size-6 rounded-full bg-ink shadow transition",
+          isOn ? "left-5" : "left-0.5",
+        )}
+      />
+    </button>
+  );
+}
+
 export function StatusPill({ tone, children }: { tone: PillTone; children: React.ReactNode }) {
   /**
    * Output:
@@ -46,11 +88,14 @@ export function StatusPill({ tone, children }: { tone: PillTone; children: React
  * Propósito: Chip de estado de factura (emitida, vencida, pagada, anulada).
  */
 export function InvoiceStatusPill({ status }: { status: InvoiceStatusFilter }) {
+  const { t } = useI18n();
   /**
    * Output:
    * @returns JSX.Element — Chip de factura
    */
-  return <StatusPill tone={INVOICE_STATUS_TONES[status]}>{INVOICE_STATUS_LABELS[status]}</StatusPill>;
+  return (
+    <StatusPill tone={INVOICE_STATUS_TONES[status]}>{t(INVOICE_STATUS_KEYS[status])}</StatusPill>
+  );
 }
 
 /**
@@ -158,6 +203,7 @@ export function PickupRevenueStats({
   pickupRevenue: PickupRevenue;
   periodLabel: string;
 }) {
+  const { t, intlLocale } = useI18n();
   /**
    * Output:
    * @returns JSX.Element — Tarjetas de partidos abiertos
@@ -165,12 +211,19 @@ export function PickupRevenueStats({
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <StatCard
-        label={`Partidos abiertos (${periodLabel})`}
-        value={formatMoney(pickupRevenue.collected)}
-        detail={`${pickupRevenue.paidSlots} cupos pagados · informativo, no se factura`}
+        label={t("platform.openMatchesPeriod", { period: periodLabel })}
+        value={formatMoney(pickupRevenue.collected, intlLocale, t("common.consult"))}
+        detail={t("platform.openMatchesDetail", { slots: pickupRevenue.paidSlots })}
       />
-      <StatCard label="Para organizadores" value={formatMoney(pickupRevenue.organizerShare)} />
-      <StatCard label="Tarifa de servicio" value={formatMoney(pickupRevenue.platformFees)} tone="positive" />
+      <StatCard
+        label={t("platform.organizerShare")}
+        value={formatMoney(pickupRevenue.organizerShare, intlLocale, t("common.consult"))}
+      />
+      <StatCard
+        label={t("platform.serviceFee")}
+        value={formatMoney(pickupRevenue.platformFees, intlLocale, t("common.consult"))}
+        tone="positive"
+      />
     </div>
   );
 }

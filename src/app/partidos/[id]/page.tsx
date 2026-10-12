@@ -1,4 +1,5 @@
 import { getSession } from "@/core/auth/session";
+import { getTranslator } from "@/core/i18n/get-locale";
 import { getPendingPayment, getPickupMatch } from "@/data/pickup.repository";
 import { MatchActions } from "@/features/pickup/match-actions";
 import { formatDateTime } from "@/shared/lib/datetime";
@@ -7,7 +8,17 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = { title: "Partido" };
+/**
+ * Propósito: Título genérico del detalle de partido.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  /**
+   * Output:
+   * @returns Metadata — Título localizado
+   */
+  return { title: t("pickup.matchPageTitle") };
+}
 
 /**
  * Propósito: Detalle de un partido convocado con reserva/pago o gestión.
@@ -17,6 +28,7 @@ export default async function PickupMatchPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { t, intlLocale } = await getTranslator();
   const { id } = await params;
   const session = await getSession();
   let match;
@@ -42,13 +54,17 @@ export default async function PickupMatchPage({
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6">
       <PageHeader kicker={match.skillLevel} title={match.venueText} />
       <div className="rounded-[32px] border border-white/8 bg-pitch p-6 space-y-4">
-        <p className="text-mist">{formatDateTime(match.startsAt)}</p>
+        <p className="text-mist">{formatDateTime(match.startsAt, intlLocale)}</p>
         <p className="font-display text-4xl tabular-nums text-bone">
-          {formatMoney(match.pricePerSlot)}
+          {formatMoney(match.pricePerSlot, intlLocale, t("common.consult"))}
         </p>
         <p className="text-sm text-mist">
-          {match.slotsLeft} libres · {match.slotsTaken}/{match.totalSlots} ·{" "}
-          {match.status}
+          {t("pickup.slotsLeft", {
+            left: match.slotsLeft,
+            taken: match.slotsTaken,
+            total: match.totalSlots,
+          })}{" "}
+          · {match.status}
         </p>
         <MatchActions
           match={match}
