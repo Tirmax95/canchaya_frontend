@@ -193,3 +193,66 @@ body {
   background: var(--lime);
   color: var(--ink);
 }
+
+/* Mapa de sedes (Leaflet). Las teselas claras de OSM se oscurecen para el tema de la app. */
+.venue-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.6);
+}
+
+.venue-map .leaflet-container,
+.venue-map.leaflet-container {
+  background: var(--pitch);
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.venue-map .leaflet-control-zoom a {
+  background: var(--ink);
+  color: var(--bone);
+  border-color: rgba(244, 239, 228, 0.12);
+}
+
+.venue-map .leaflet-control-zoom a:hover {
+  background: var(--pitch);
+  color: var(--lime);
+}
+
+.venue-map .leaflet-control-attribution {
+  background: rgba(8, 17, 12, 0.75);
+  color: var(--mist);
+}
+
+.venue-map .leaflet-control-attribution a {
+  color: var(--lime);
+}
+
+.venue-map-pin {
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+}
+
+.venue-map .leaflet-popup-content-wrapper,
+.venue-map .leaflet-popup-tip {
+  background: var(--ink);
+  color: var(--bone);
+  border: 1px solid rgba(244, 239, 228, 0.12);
+}
+
+.venue-map-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.venue-map-popup a,
+.venue-map-popup strong {
+  color: var(--lime);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.venue-map-popup span {
+  color: var(--mist);
+  font-size: 12px;
+}

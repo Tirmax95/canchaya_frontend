@@ -10,12 +10,13 @@
     "build": "next build --turbopack",
     "start": "next start --port 3001",
     "lint": "eslint",
-    "test": "tsx --test src/domain/booking.test.ts src/domain/venue-occupancy.test.ts src/domain/reservation-inbox.test.ts src/shared/lib/url.test.ts",
+    "test": "tsx --test src/domain/booking.test.ts src/domain/establishment.test.ts src/domain/events.test.ts src/domain/venue-occupancy.test.ts src/domain/reservation-inbox.test.ts src/shared/lib/url.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
     "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
     "next": "^15.5.27",
     "react": "^19.1.2",
     "react-dom": "^19.1.2",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.20",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

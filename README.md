@@ -58,3 +58,7 @@ npm run build
 
 - **Jugador:** registro / login → sedes → cancha → horario → reserva pending
 - **Staff** (`admin`, `establishment_owner`, `manager`): panel para CRUD de sedes/canchas y confirmar reservas
+- **Eventos y torneos** (módulo **Eventos**, lo habilita el super admin por tenant):
+  - **Organizador:** en `/admin/eventos` crea el evento y elige el formato: liga, eliminación directa, grupos + eliminatoria o evento abierto. Configura cupos, jugadores por equipo, valor de inscripción, aprobación manual, puntos, ida y vuelta, grupos y tercer puesto.
+  - **Ciclo de vida:** publicar → cerrar inscripciones → iniciar (el fixture se arma solo) → programar partidos en cancha (crea una reserva confirmada que bloquea el horario) → cargar resultados (tabla y llaves se actualizan y el ganador avanza) → finalizar. También se puede cancelar: se liberan las canchas y se avisa a los equipos.
+  - **Capitán:** en `/eventos/[id]` inscribe uno de sus equipos. Si no hay cupo, queda en lista de espera y sube solo cuando se libera uno. Paga en `/eventos/[id]/inscripcion/[registro]` si la sede cobra en línea (Wompi); si no, la organización marca el pago. Puede retirarse antes del inicio y, si ya pagó, la devolución queda pendiente para el organizador.

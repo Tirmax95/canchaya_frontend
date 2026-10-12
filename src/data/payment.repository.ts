@@ -177,7 +177,7 @@ export async function settleManualPaymentIntent(reference: string): Promise<void
 /**
  * Propósito: Descarta URLs que no sean Wompi. El backend ya las genera; esto es defensa extra.
  */
-function sanitizeIntent(intent: PublicPaymentIntent): PublicPaymentIntent {
+export function sanitizeIntent(intent: PublicPaymentIntent): PublicPaymentIntent {
   const status = PAYMENT_INTENT_STATUSES.includes(intent.status) ? intent.status : "error";
   /**
    * Output:

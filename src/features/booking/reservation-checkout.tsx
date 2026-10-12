@@ -278,7 +278,7 @@ function toReservationStatus(status: string): ReservationStatus {
 /**
  * Propósito: Tarjeta seleccionable de un medio de pago.
  */
-function MethodChoice({
+export function MethodChoice({
   method,
   isSelected,
   onSelect,

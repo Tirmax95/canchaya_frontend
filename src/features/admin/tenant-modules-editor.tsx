@@ -14,6 +14,7 @@ const TENANT_MODULE_HINT_KEYS: Record<TenantModule, MessageKey> = {
   establishments: "admin.moduleVenuesHint",
   fields: "admin.moduleCourtsHint",
   reservations: "admin.moduleReservationsHint",
+  events: "admin.moduleEventsHint",
 };
 import { usePlatformMutation } from "@/features/admin/platform/use-platform-mutation";
 import { cn } from "@/shared/lib/cn";

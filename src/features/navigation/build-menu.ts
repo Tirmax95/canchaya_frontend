@@ -35,6 +35,7 @@ function buildExploreItems(t: TranslateFn): SideMenuItem[] {
     { href: "/partidos", label: t("nav.matches"), icon: "matches" },
     { href: "/retos", label: t("nav.challenges"), icon: "challenges" },
     { href: "/equipos", label: t("nav.teams"), icon: "teams" },
+    { href: "/eventos", label: t("nav.events"), icon: "events" },
     { href: "/establecimientos", label: t("nav.venues"), icon: "venues" },
     { href: "/reservas", label: t("nav.bookings"), icon: "bookings" },
   ];

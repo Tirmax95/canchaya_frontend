@@ -68,3 +68,40 @@ export function hoursBetween(startIso: string, endIso: string): number {
    */
   return (new Date(endIso).getTime() - new Date(startIso).getTime()) / 3_600_000;
 }
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+/**
+ * Propósito: Día de la semana y minutos desde medianoche en la zona horaria de la app, para
+ * evaluar horarios de sedes sin depender de la zona del servidor ni del navegador.
+ */
+export function getZonedWeekdayAndMinutes(
+  date = new Date(),
+  timeZone: string = APP_TIMEZONE,
+): { day: number; minutes: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  /**
+   * Output:
+   * @returns object — day 0..6 (0 = domingo) y minutes 0..1439
+   */
+  return {
+    day: WEEKDAY_INDEX[read("weekday")] ?? date.getDay(),
+    minutes: Number(read("hour")) * 60 + Number(read("minute")),
+  };
+}

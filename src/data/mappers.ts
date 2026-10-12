@@ -1,5 +1,9 @@
 import { AppError } from "@/core/errors/app-error";
-import type { Establishment } from "@/domain/establishment";
+import {
+  normalizeAmenities,
+  type Establishment,
+  type OpeningHoursDay,
+} from "@/domain/establishment";
 import type { Field } from "@/domain/field";
 import type { Reservation, ReservationStatus } from "@/domain/reservation";
 import { RESERVATION_STATUSES } from "@/domain/reservation";
@@ -24,6 +28,19 @@ interface RawEstablishment {
   organizationName?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
+  description?: unknown;
+  city?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
+  email?: unknown;
+  whatsapp?: unknown;
+  website?: unknown;
+  instagram?: unknown;
+  openingHours?: unknown;
+  amenities?: unknown;
+  galleryImages?: unknown;
+  policies?: unknown;
+  isActive?: unknown;
 }
 
 interface RawField {
@@ -179,7 +196,87 @@ export function toEstablishment(raw: RawEstablishment): Establishment {
       typeof raw.organizationName === "string" ? raw.organizationName : undefined,
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
+    description: toText(raw.description),
+    city: toText(raw.city),
+    latitude: toCoordinate(raw.latitude),
+    longitude: toCoordinate(raw.longitude),
+    email: toText(raw.email),
+    whatsapp: toText(raw.whatsapp),
+    website: toText(raw.website),
+    instagram: toText(raw.instagram),
+    openingHours: toOpeningHours(raw.openingHours),
+    amenities: normalizeAmenities(raw.amenities),
+    galleryImages: Array.isArray(raw.galleryImages)
+      ? raw.galleryImages.filter((url): url is string => typeof url === "string")
+      : [],
+    policies: toText(raw.policies),
+    isActive: raw.isActive !== false,
   };
+}
+
+/**
+ * Propósito: Texto opcional del backend; cualquier otro tipo queda vacío.
+ */
+function toText(value: unknown): string {
+  /**
+   * Output:
+   * @returns string — Texto o cadena vacía
+   */
+  return typeof value === "string" ? value : "";
+}
+
+/**
+ * Propósito: Coordenada numérica (Postgres NUMERIC puede llegar como string).
+ */
+function toCoordinate(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    /**
+     * Output:
+     * @returns null — Sin coordenada
+     */
+    return null;
+  }
+  const parsed = Number(value);
+  /**
+   * Output:
+   * @returns number | null — Coordenada finita o null
+   */
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * Propósito: Horario semanal tolerante: descarta entradas mal formadas.
+ */
+function toOpeningHours(value: unknown): OpeningHoursDay[] {
+  if (!Array.isArray(value)) {
+    /**
+     * Output:
+     * @returns OpeningHoursDay[] — Vacío si no es lista
+     */
+    return [];
+  }
+  /**
+   * Output:
+   * @returns OpeningHoursDay[] — Entradas válidas
+   */
+  return value.flatMap((entry): OpeningHoursDay[] => {
+    if (!entry || typeof entry !== "object") {
+      return [];
+    }
+    const raw = entry as Record<string, unknown>;
+    const day = Number(raw.day);
+    if (!Number.isInteger(day) || day < 0 || day > 6) {
+      return [];
+    }
+    return [
+      {
+        day,
+        closed: raw.closed === true,
+        opensAt: typeof raw.opensAt === "string" ? raw.opensAt : null,
+        closesAt: typeof raw.closesAt === "string" ? raw.closesAt : null,
+      },
+    ];
+  });
 }
 
 /**

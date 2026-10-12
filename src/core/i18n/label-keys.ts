@@ -1,4 +1,12 @@
 import type { MessageKey } from "@/core/i18n/messages";
+import type { EstablishmentAmenity } from "@/domain/establishment";
+import type {
+  EventFormat,
+  EventSport,
+  EventStatus,
+  RegistrationPaymentStatus,
+  RegistrationStatus,
+} from "@/domain/events";
 import type { ErrorLogLevel, ErrorLogSource } from "@/domain/observability";
 import type {
   EmailStatus,
@@ -55,6 +63,9 @@ export const EMAIL_TEMPLATE_KEYS: Record<string, MessageKey> = {
   tenant_suspended: "labels.templateTenantSuspended",
   password_reset: "labels.templatePasswordReset",
   staff_invitation: "labels.templateStaffInvitation",
+  event_registration_confirmed: "labels.templateEventRegistrationConfirmed",
+  event_registration_rejected: "labels.templateEventRegistrationRejected",
+  event_cancelled: "labels.templateEventCancelled",
 };
 
 export const INVOICE_STATUS_KEYS: Record<InvoiceStatusFilter, MessageKey> = {
@@ -119,6 +130,7 @@ const TENANT_MODULE_LABEL_KEYS = {
   establishments: "admin.moduleVenues",
   fields: "admin.moduleCourts",
   reservations: "admin.moduleReservations",
+  events: "admin.moduleEvents",
 } as const;
 
 /**
@@ -146,7 +158,93 @@ export function translateTenantModuleLabel(
 ): string {
   /**
    * Output:
-   * @returns string — Dashboard / Sedes / Canchas / Reservas
+   * @returns string — Dashboard / Sedes / Canchas / Reservas / Eventos
    */
   return t(TENANT_MODULE_LABEL_KEYS[moduleId]);
 }
+
+export const AMENITY_LABEL_KEYS: Record<EstablishmentAmenity, MessageKey> = {
+  parking: "venue.amenity_parking",
+  locker_rooms: "venue.amenity_locker_rooms",
+  showers: "venue.amenity_showers",
+  cafeteria: "venue.amenity_cafeteria",
+  wifi: "venue.amenity_wifi",
+  night_lighting: "venue.amenity_night_lighting",
+  covered: "venue.amenity_covered",
+  equipment_rental: "venue.amenity_equipment_rental",
+  first_aid: "venue.amenity_first_aid",
+  accessible: "venue.amenity_accessible",
+  store: "venue.amenity_store",
+  grill_area: "venue.amenity_grill_area",
+};
+
+/** Índice = día de la semana (0 = domingo), igual que `Date#getDay`. */
+export const WEEK_DAY_LABEL_KEYS: readonly MessageKey[] = [
+  "venue.day0",
+  "venue.day1",
+  "venue.day2",
+  "venue.day3",
+  "venue.day4",
+  "venue.day5",
+  "venue.day6",
+];
+
+export const EVENT_STATUS_KEYS: Record<EventStatus, MessageKey> = {
+  draft: "events.status_draft",
+  registration_open: "events.status_registration_open",
+  registration_closed: "events.status_registration_closed",
+  in_progress: "events.status_in_progress",
+  completed: "events.status_completed",
+  cancelled: "events.status_cancelled",
+};
+
+export const EVENT_FORMAT_KEYS: Record<EventFormat, MessageKey> = {
+  league: "events.format_league",
+  knockout: "events.format_knockout",
+  groups_knockout: "events.format_groups_knockout",
+  open: "events.format_open",
+};
+
+export const EVENT_FORMAT_HINT_KEYS: Record<EventFormat, MessageKey> = {
+  league: "events.formatHint_league",
+  knockout: "events.formatHint_knockout",
+  groups_knockout: "events.formatHint_groups_knockout",
+  open: "events.formatHint_open",
+};
+
+export const EVENT_SPORT_KEYS: Record<EventSport, MessageKey> = {
+  football_5: "events.sport_football_5",
+  football_6: "events.sport_football_6",
+  football_7: "events.sport_football_7",
+  football_8: "events.sport_football_8",
+  football_9: "events.sport_football_9",
+  football_11: "events.sport_football_11",
+  futsal: "events.sport_futsal",
+  other: "events.sport_other",
+};
+
+export const EVENT_REGISTRATION_STATUS_KEYS: Record<RegistrationStatus, MessageKey> = {
+  pending_payment: "events.reg_pending_payment",
+  pending_approval: "events.reg_pending_approval",
+  confirmed: "events.reg_confirmed",
+  waitlisted: "events.reg_waitlisted",
+  rejected: "events.reg_rejected",
+  withdrawn: "events.reg_withdrawn",
+};
+
+export const EVENT_PAYMENT_STATUS_KEYS: Record<RegistrationPaymentStatus, MessageKey> = {
+  not_required: "events.pay_not_required",
+  pending: "events.pay_pending",
+  paid: "events.pay_paid",
+  refund_due: "events.pay_refund_due",
+  refunded: "events.pay_refunded",
+};
+
+export const EVENT_NEXT_STEP_KEYS: Record<EventStatus, MessageKey> = {
+  draft: "events.nextStepHint_draft",
+  registration_open: "events.nextStepHint_registration_open",
+  registration_closed: "events.nextStepHint_registration_closed",
+  in_progress: "events.nextStepHint_in_progress",
+  completed: "events.nextStepHint_completed",
+  cancelled: "events.nextStepHint_cancelled",
+};

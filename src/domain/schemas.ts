@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { AppError } from "@/core/errors/app-error";
 import { MAX_BOOKING_HOURS, MIN_BOOKING_HOURS } from "@/domain/booking";
+import {
+  ESTABLISHMENT_AMENITIES,
+  MAX_GALLERY_IMAGES,
+  validateOpeningHours,
+} from "@/domain/establishment";
 import { TENANT_MODULES } from "@/domain/tenant-modules";
+import { EVENT_FORMATS, EVENT_LIMITS, EVENT_SPORTS } from "@/domain/events";
 import { MAX_COMMISSION_BPS, MAX_MONTHLY_FEE, STATUS_REASON_MAX_LENGTH } from "@/domain/platform";
 import {
   getPasswordByteLength,
@@ -125,12 +131,108 @@ const imageUrlSchema = z
 /** Id numérico positivo: nunca se interpola sin validar en una ruta del backend. */
 export const positiveIdSchema = z.coerce.number().int().positive().max(2_147_483_647);
 
-export const establishmentSchema = z.object({
-  name: z.string().trim().min(2, "El nombre es obligatorio").max(120),
-  address: z.string().trim().min(3, "La dirección es obligatoria").max(180),
-  phone: z.string().trim().min(6).max(20).optional().or(z.literal("")),
-  image_establishment: imageUrlSchema,
-});
+const OPENING_HOURS_ERRORS: Record<string, string> = {
+  invalidDay: "El horario tiene un día inválido o repetido",
+  invalidTime: "Las horas del horario deben tener formato HH:MM",
+  invertedRange: "La hora de apertura debe ser anterior al cierre",
+};
+
+const openingHoursSchema = z
+  .array(
+    z.object({
+      day: z.number().int().min(0).max(6),
+      closed: z.boolean(),
+      opens_at: z.string().nullable(),
+      closes_at: z.string().nullable(),
+    }),
+  )
+  .max(7)
+  .superRefine((hours, context) => {
+    const errorKey = validateOpeningHours(
+      hours.map((entry) => ({
+        day: entry.day,
+        closed: entry.closed,
+        opensAt: entry.opens_at,
+        closesAt: entry.closes_at,
+      })),
+    );
+    if (errorKey) {
+      context.addIssue({ code: "custom", message: OPENING_HOURS_ERRORS[errorKey] ?? errorKey });
+    }
+  });
+
+const optionalText = (max: number) => z.string().trim().max(max).optional().default("");
+
+export const establishmentSchema = z
+  .object({
+    name: z.string().trim().min(2, "El nombre es obligatorio").max(120),
+    address: z.string().trim().min(3, "La dirección es obligatoria").max(180),
+    phone: z.string().trim().min(6).max(20).optional().or(z.literal("")),
+    image_establishment: imageUrlSchema,
+    description: optionalText(1000),
+    city: optionalText(80),
+    latitude: z.number().min(-90).max(90).nullable().optional().default(null),
+    longitude: z.number().min(-180).max(180).nullable().optional().default(null),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(160)
+      .email("Correo de contacto inválido")
+      .optional()
+      .or(z.literal(""))
+      .default(""),
+    whatsapp: z
+      .string()
+      .trim()
+      .transform((value) => value.replace(/[\s()-]/g, ""))
+      .refine((value) => value === "" || /^\+?\d{7,15}$/.test(value), "WhatsApp debe tener entre 7 y 15 dígitos")
+      .optional()
+      .default(""),
+    website: z
+      .string()
+      .trim()
+      .max(300)
+      .refine(
+        (value) => value === "" || /^https:\/\/[^\s]+$/.test(value),
+        "El sitio web debe ser una URL https",
+      )
+      .optional()
+      .default(""),
+    instagram: z
+      .string()
+      .trim()
+      .transform((value) => value.replace(/^@/, ""))
+      .refine((value) => value === "" || /^[A-Za-z0-9._]{1,30}$/.test(value), "Usuario de Instagram inválido")
+      .optional()
+      .default(""),
+    opening_hours: openingHoursSchema.optional().default([]),
+    amenities: z.array(z.enum(ESTABLISHMENT_AMENITIES)).max(ESTABLISHMENT_AMENITIES.length).optional().default([]),
+    gallery_images: z
+      .array(imageUrlSchema)
+      .max(MAX_GALLERY_IMAGES, `Máximo ${MAX_GALLERY_IMAGES} fotos en la galería`)
+      .optional()
+      .default([])
+      .transform((urls) => [...new Set(urls)]),
+    policies: optionalText(1000),
+    is_active: z.boolean().optional().default(true),
+  })
+  .refine(
+    (input) => (input.latitude === null) === (input.longitude === null),
+    { message: "Latitud y longitud deben enviarse juntas", path: ["latitude"] },
+  );
+
+/** Búsqueda por texto o dirección inversa por coordenadas, nunca ambas vacías. */
+export const geocodeQuerySchema = z
+  .object({
+    q: z.string().trim().min(3, "Escribe al menos 3 caracteres").max(200).optional(),
+    lat: z.coerce.number().min(-90).max(90).optional(),
+    lng: z.coerce.number().min(-180).max(180).optional(),
+  })
+  .refine(
+    (input) => Boolean(input.q) || (input.lat !== undefined && input.lng !== undefined),
+    { message: "Indica una dirección o un punto del mapa" },
+  );
 
 export const fieldSchema = z.object({
   id_establishment: z.coerce.number().int().positive(),
@@ -320,3 +422,133 @@ export function parseSchema<T>(schema: z.ZodType<T>, payload: unknown): T {
    */
   throw new AppError("VALIDATION", message, 400);
 }
+
+const civilDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida")
+  .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), "Fecha inválida");
+
+const eventSettingsSchema = z
+  .object({
+    points_win: z.number().int().min(0).max(10),
+    points_draw: z.number().int().min(0).max(10),
+    points_loss: z.number().int().min(0).max(10),
+    double_round: z.boolean(),
+    group_count: z.number().int().min(1).max(EVENT_LIMITS.maxGroups),
+    qualifiers_per_group: z.number().int().min(1).max(8),
+    third_place_match: z.boolean(),
+    match_duration_minutes: z
+      .number()
+      .int()
+      .min(EVENT_LIMITS.minMatchMinutes)
+      .max(EVENT_LIMITS.maxMatchMinutes),
+  })
+  .partial();
+
+/** Campos del evento (contrato snake_case de NestJS). En la edición todo es opcional. */
+export const eventInputSchema = z
+  .object({
+    establishment_id: z.number().int().positive(),
+    name: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres").max(120),
+    description: z.string().trim().max(4000),
+    sport: z.enum(EVENT_SPORTS),
+    format: z.enum(EVENT_FORMATS),
+    starts_on: civilDateSchema,
+    ends_on: civilDateSchema.nullable(),
+    registration_closes_at: isoDateSchema.nullable(),
+    min_teams: z.number().int().min(EVENT_LIMITS.minTeams).max(EVENT_LIMITS.maxTeams),
+    max_teams: z.number().int().min(EVENT_LIMITS.minTeams).max(EVENT_LIMITS.maxTeams),
+    min_players_per_team: z.number().int().min(1).max(EVENT_LIMITS.maxPlayersPerTeam),
+    max_players_per_team: z.number().int().min(1).max(EVENT_LIMITS.maxPlayersPerTeam).nullable(),
+    entry_fee: z
+      .number()
+      .int("El valor debe ser un número entero")
+      .min(0)
+      .max(EVENT_LIMITS.maxEntryFeePesos, "El valor es demasiado alto"),
+    requires_approval: z.boolean(),
+    settings: eventSettingsSchema,
+    prizes: z.string().trim().max(2000),
+    rules: z.string().trim().max(4000),
+    cover_image: z.union([z.literal(""), imageUrlSchema]),
+  })
+  .partial();
+
+export const createEventSchema = eventInputSchema.required({
+  establishment_id: true,
+  name: true,
+  sport: true,
+  format: true,
+  starts_on: true,
+  max_teams: true,
+});
+
+export const eventActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("publish") }),
+  z.object({ action: z.literal("close_registration") }),
+  z.object({ action: z.literal("reopen_registration") }),
+  z.object({ action: z.literal("start"), randomize: z.boolean().optional() }),
+  z.object({ action: z.literal("complete") }),
+  z.object({ action: z.literal("cancel"), reason: statusReasonSchema }),
+  z.object({ action: z.literal("regenerate_fixture"), randomize: z.boolean().optional() }),
+  z.object({ action: z.literal("generate_knockout") }),
+]);
+export type EventActionInput = z.infer<typeof eventActionSchema>;
+
+export const registerTeamSchema = z.object({
+  team_id: z.number().int().positive("Elige un equipo"),
+  notes: z.string().trim().max(300).optional(),
+});
+
+export const manageRegistrationSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("approve") }),
+  z.object({ action: z.literal("reject"), reason: statusReasonSchema }),
+  z.object({ action: z.literal("mark_paid") }),
+  z.object({ action: z.literal("mark_refunded") }),
+  z.object({
+    action: z.literal("set_seed"),
+    seed: z.number().int().min(1).max(EVENT_LIMITS.maxTeams).nullable(),
+  }),
+]);
+export type ManageRegistrationInput = z.infer<typeof manageRegistrationSchema>;
+
+const scoreSchema = z.number().int().min(0).max(EVENT_LIMITS.maxScore);
+
+export const matchUpdateSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("schedule"),
+    field_id: z.number().int().positive("Elige una cancha"),
+    starts_at: isoDateSchema,
+    duration_minutes: z
+      .number()
+      .int()
+      .min(EVENT_LIMITS.minMatchMinutes)
+      .max(EVENT_LIMITS.maxMatchMinutes)
+      .optional(),
+    notes: z.string().trim().max(300).optional(),
+  }),
+  z.object({
+    kind: z.literal("result"),
+    home_score: scoreSchema,
+    away_score: scoreSchema,
+    home_penalties: scoreSchema.nullable().optional(),
+    away_penalties: scoreSchema.nullable().optional(),
+    walkover: z.boolean().optional(),
+    notes: z.string().trim().max(300).optional(),
+  }),
+]);
+export type MatchUpdateInput = z.infer<typeof matchUpdateSchema>;
+
+export const registrationActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("withdraw") }),
+  z.object({ action: z.literal("checkout"), method_id: z.number().int().positive() }),
+  z.object({ action: z.literal("confirm_local") }),
+]);
+export type RegistrationActionInput = z.infer<typeof registrationActionSchema>;
+
+export const eventListQuerySchema = z.object({
+  status: z.enum(["registration_open", "registration_closed", "in_progress", "completed"]).optional(),
+  sport: z.enum(EVENT_SPORTS).optional(),
+  city: z.string().trim().max(80).optional(),
+  include_past: z.enum(["true", "false"]).optional(),
+});
+export type EventListQuery = z.infer<typeof eventListQuerySchema>;

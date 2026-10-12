@@ -9,6 +9,8 @@ const PROTECTED_PREFIXES = [
   "/partidos/nuevo",
   "/seguridad",
 ];
+/** Rutas con sesión dentro de secciones públicas (p. ej. pagar la inscripción a un evento). */
+const PROTECTED_PATTERNS = [/^\/eventos\/\d+\/inscripcion(\/|$)/];
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /**
@@ -78,9 +80,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
-  );
+  const isProtected =
+    PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    PROTECTED_PATTERNS.some((pattern) => pattern.test(pathname));
 
   if (!isProtected) {
     /**
@@ -118,5 +120,6 @@ export const config = {
     "/retos/:path*",
     "/partidos/nuevo",
     "/seguridad",
+    "/eventos/:id/inscripcion/:path*",
   ],
 };

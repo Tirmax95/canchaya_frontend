@@ -195,6 +195,9 @@ export const EMAIL_TEMPLATE_LABELS: Record<string, string> = {
   tenant_suspended: "Tenant suspendido",
   password_reset: "Restablecer contraseña",
   staff_invitation: "Invitación al equipo",
+  event_registration_confirmed: "Inscripción a evento confirmada",
+  event_registration_rejected: "Inscripción a evento rechazada",
+  event_cancelled: "Evento cancelado",
 };
 
 export interface OutboxEmail {

@@ -36,6 +36,7 @@ const MENU_ICON_PATHS: Record<SideMenuIcon, string> = {
   establishments: "M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6",
   fields: "M3 5h18v14H3V5Zm9 0v14M3 9h3v6H3m18-6h-3v6h3M12 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z",
   reservations: "M7 3v3m10-3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm3 8 2.5 2.5L16 10",
+  events: "M8 21h8m-4-4v4m-5-17h10v5a5 5 0 0 1-10 0V4Zm0 2H4v2a3 3 0 0 0 3 3m10-5h3v2a3 3 0 0 1-3 3",
   overview: "M4 19V9m5 10V5m5 14v-7m5 7V8M3 21h18",
   tenants: "M12 3 3 8l9 5 9-5-9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5",
   billing: "M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6m-6 4h6m-6 4h3",

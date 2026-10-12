@@ -22,11 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function NewEstablishmentPage() {
   const [{ t }] = await Promise.all([getTranslator(), requireAdminModule("establishments")]);
   return (
-    <div className="mx-auto max-w-xl space-y-8">
+    <div className="space-y-8">
       <PageHeader kicker={t("admin.venuesKicker")} title={t("admin.newVenue")} />
-      <div className="rounded-[32px] border border-white/8 bg-pitch p-6">
-        <EstablishmentForm />
-      </div>
+      <EstablishmentForm />
     </div>
   );
 }

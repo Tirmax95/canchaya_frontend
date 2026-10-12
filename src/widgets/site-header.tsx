@@ -24,6 +24,7 @@ export function SiteHeader() {
     { href: "/partidos", label: t("nav.matches") },
     { href: "/retos", label: t("nav.challenges") },
     { href: "/equipos", label: t("nav.teams") },
+    { href: "/eventos", label: t("nav.events") },
     { href: "/establecimientos", label: t("nav.venues") },
     { href: "/reservas", label: t("nav.bookings") },
   ];

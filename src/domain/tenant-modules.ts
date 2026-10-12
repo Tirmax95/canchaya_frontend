@@ -7,6 +7,7 @@ export const TENANT_MODULES = [
   "establishments",
   "fields",
   "reservations",
+  "events",
 ] as const;
 
 export type TenantModule = (typeof TENANT_MODULES)[number];
@@ -37,6 +38,11 @@ export const TENANT_MODULE_DEFINITIONS: Record<TenantModule, TenantModuleDefinit
     label: "Reservas",
     description: "Confirmar y cancelar reservas de las canchas.",
     href: "/admin/reservas",
+  },
+  events: {
+    label: "Eventos",
+    description: "Torneos, ligas y eventos abiertos con inscripción, fixture y resultados.",
+    href: "/admin/eventos",
   },
 };
 
