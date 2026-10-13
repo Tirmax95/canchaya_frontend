@@ -206,17 +206,47 @@ export function toClientUser(session: SessionUser): ClientSessionUser {
  * Propósito: Lee la sesión actual desde la cookie httpOnly del request.
  */
 export async function getSession(): Promise<SessionUser | null> {
-  const { sessionCookieName } = getServerEnv();
-  const store = await cookies();
+  const decoded = await getSessionWithExpiry();
   /**
    * Output:
    * @returns SessionUser | null — Usuario autenticado o null
    */
-  const decoded = decodeSession(store.get(sessionCookieName)?.value);
-  if (!decoded) {
-    return null;
+  return decoded ? toStoredUser(decoded) : null;
+}
+
+/**
+ * Propósito: Sesión más su caducidad absoluta, para reescribir la cookie sin alargarla.
+ */
+export async function getSessionWithExpiry(): Promise<(SessionUser & { expiresAt: number }) | null> {
+  const { sessionCookieName } = getServerEnv();
+  const store = await cookies();
+  /**
+   * Output:
+   * @returns (SessionUser & { expiresAt }) | null — Sesión con su vencimiento
+   */
+  return decodeSession(store.get(sessionCookieName)?.value);
+}
+
+/**
+ * Propósito: Actualiza campos de la sesión actual conservando su caducidad original.
+ */
+export async function refreshSession(
+  changes: Partial<Omit<SessionUser, "sessionId" | "id">>,
+): Promise<void> {
+  const current = await getSessionWithExpiry();
+  if (!current) {
+    /**
+     * Output:
+     * @throws AppError — 401 si no hay sesión
+     */
+    throw new AppError("UNAUTHORIZED", "Debes iniciar sesión", 401);
   }
-  return toStoredUser(decoded);
+  const { expiresAt, ...user } = current;
+  await writeSession({ ...user, ...changes }, SESSION_MAX_AGE_SECONDS, expiresAt);
+  /**
+   * Output:
+   * Side effects — Cookie reescrita con el mismo vencimiento
+   */
 }
 
 /**
@@ -374,6 +404,19 @@ export async function beginImpersonation(
 }
 
 /**
+ * Propósito: Lee, sin consumirla, la sesión del super admin guardada al entrar en "ver como".
+ */
+export async function readImpersonationReturnSession(): Promise<SessionUser | null> {
+  const store = await cookies();
+  const adminSession = decodeSession(store.get(IMPERSONATION_RETURN_COOKIE)?.value, "return");
+  /**
+   * Output:
+   * @returns SessionUser | null — Sesión de retorno válida o null
+   */
+  return adminSession ? toStoredUser(adminSession) : null;
+}
+
+/**
  * Propósito: Sale de "ver como": si la sesión actual es la de solo lectura, restaura la del
  * super admin guardada (si la firma sigue válida). La cookie de retorno se borra siempre.
  */
@@ -397,7 +440,7 @@ export async function endImpersonation(currentSession: SessionUser | null): Prom
     return null;
   }
   const restored = toStoredUser(adminSession);
-  await writeSession(restored);
+  await writeSession(restored, SESSION_MAX_AGE_SECONDS, adminSession.expiresAt);
   /**
    * Output:
    * @returns SessionUser — Sesión del super admin restaurada (el backend revalida el sessionId)

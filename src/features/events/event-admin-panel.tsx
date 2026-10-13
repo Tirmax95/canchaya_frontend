@@ -381,13 +381,13 @@ function RegistrationsSection({
                   ) : null}
                   <p className="text-xs text-mist/70">
                     {t("events.regRegisteredAt")}: {new Date(team.createdAt).toLocaleDateString(intlLocale)}
-                    {team.amountCents > 0 ? ` · ${formatMoney(Math.round(team.amountCents / 100), intlLocale)}` : ""}
+                    {(team.amountCents ?? 0) > 0 ? ` · ${formatMoney(Math.round((team.amountCents ?? 0) / 100), intlLocale)}` : ""}
                   </p>
                   {team.notes ? <p className="mt-1 text-xs italic text-mist">“{team.notes}”</p> : null}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <RegistrationStatusBadge status={team.status} />
-                  <PaymentStatusBadge status={team.paymentStatus} />
+                  {team.paymentStatus ? <PaymentStatusBadge status={team.paymentStatus} /> : null}
                 </div>
               </div>
 

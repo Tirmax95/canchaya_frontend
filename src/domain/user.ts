@@ -32,9 +32,13 @@ export interface ClientSessionUser extends PublicUser {
   twoFactorSetupRequired?: boolean;
   /** Sesión "ver como tenant" abierta por el super admin: solo lectura. */
   isReadOnly?: boolean;
+  /** Nunca: así TypeScript rechaza pasar un SessionUser a un componente cliente. */
+  sessionId?: never;
 }
 
-export interface SessionUser extends ClientSessionUser {
+export interface SessionUser extends PublicUser {
+  twoFactorSetupRequired?: boolean;
+  isReadOnly?: boolean;
   sessionId: string;
 }
 

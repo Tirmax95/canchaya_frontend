@@ -68,7 +68,7 @@ export default async function PickupMatchPage({
         </p>
         <MatchActions
           match={match}
-          isOwner={session?.id === match.organizerId}
+          isOwner={match.isOrganizer}
           isAuthenticated={Boolean(session)}
           pendingPayment={pendingPayment}
         />

@@ -7,7 +7,7 @@ import { USER_ROLE_FILTERS, type UserAccountStatus, type UserRoleFilter } from "
 import { DataTable, PanelSection, StatusPill } from "@/features/admin/platform/platform-ui";
 import { ResetTwoFactorAction, UserStatusAction } from "@/features/admin/platform/user-status-action";
 import { formatDateTime } from "@/shared/lib/datetime";
-import { buttonClassName } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/ui/button-styles";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";

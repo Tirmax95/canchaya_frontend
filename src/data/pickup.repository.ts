@@ -1,3 +1,4 @@
+import { getSession } from "@/core/auth/session";
 import { requestAuthedBackend, requestBackend } from "@/core/http/backend-client";
 import type {
   GamificationSummary,
@@ -37,7 +38,8 @@ export function toPickupMatch(raw: unknown): PickupMatch {
    */
   return {
     id: asNumber(row.id),
-    organizerId: asNumber(row.organizerId),
+    organizerId: row.organizerId === undefined ? undefined : asNumber(row.organizerId),
+    isOrganizer: row.isOrganizer === true,
     sport: String(row.sport ?? "futbol"),
     venueText: String(row.venueText ?? ""),
     lat: asNumber(row.lat),
@@ -88,9 +90,21 @@ export async function listMyMatches() {
   return rows.map((row) => toPickupMatch(row));
 }
 
+/**
+ * Propósito: Detalle público de un partido. Con sesión se llama autenticado: el backend solo
+ * incluye `organizerId`/`isOrganizer` a usuarios identificados (no al público anónimo).
+ */
 export async function getPickupMatch(matchId: number) {
+  const path = `/pickup/matches/${matchId}`;
+  const session = await getSession();
+  /**
+   * Output:
+   * @returns PickupMatch — Partido, con organizador solo si hay sesión
+   */
   return toPickupMatch(
-    await requestBackend<unknown>({ path: `/pickup/matches/${matchId}` }),
+    session
+      ? await requestAuthedBackend<unknown>({ path })
+      : await requestBackend<unknown>({ path }),
   );
 }
 

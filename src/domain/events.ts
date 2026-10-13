@@ -125,19 +125,29 @@ export interface EventSummary {
   waitlistedTeams: number;
 }
 
+/**
+ * Equipo inscrito. El público solo recibe equipo, estado, siembra y grupo: pago, valor y
+ * notas llegan únicamente al organizador y, en las inscripciones propias, al capitán.
+ */
 export interface EventTeam {
   registrationId: number;
   teamId: number;
   teamName: string;
   status: RegistrationStatus;
-  paymentStatus: RegistrationPaymentStatus;
-  amountCents: number;
   seed: number | null;
   groupLabel: string | null;
-  notes: string;
   createdAt: string;
+  paymentStatus?: RegistrationPaymentStatus;
+  amountCents?: number;
+  paymentDueAt?: string | null;
+  notes?: string;
+  decisionReason?: string | null;
   contact?: { fullName: string; email: string; phone: string };
 }
+
+/** Inscripción propia o vista del organizador: siempre trae el estado del pago. */
+export type EventTeamWithPayment = EventTeam &
+  Required<Pick<EventTeam, "paymentStatus" | "amountCents">>;
 
 export interface EventMatch {
   matchId: number;
@@ -199,18 +209,18 @@ export interface EventDetail {
   matches: EventMatch[];
   standings: StandingsTable[];
   champion: { registrationId: number; teamName: string } | null;
-  viewer: { canManage: boolean; myRegistrations: EventTeam[] };
+  viewer: { canManage: boolean; myRegistrations: EventTeamWithPayment[] };
   onlinePaymentsEnabled: boolean;
   fields?: Array<{ fieldId: number; name: string; establishmentName: string }>;
 }
 
 export interface MyEventRegistration {
-  registration: EventTeam & { eventId: number };
+  registration: EventTeamWithPayment & { eventId: number };
   event: EventSummary;
 }
 
 export interface RegistrationCheckoutContext {
-  registration: EventTeam & { eventId: number };
+  registration: EventTeamWithPayment & { eventId: number };
   event: EventSummary;
   amountPesos: number;
   onlinePaymentsEnabled: boolean;

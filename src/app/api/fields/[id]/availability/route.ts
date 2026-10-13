@@ -1,4 +1,4 @@
-import { APP_TIMEZONE } from "@/core/config/env";
+import { APP_TIMEZONE } from "@/core/config/app";
 import { AppError } from "@/core/errors/app-error";
 import { handleRoute, parsePositiveIntParam } from "@/core/http/route";
 import { listReservationsByField } from "@/data/reservation.repository";

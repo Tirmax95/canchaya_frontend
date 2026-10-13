@@ -1,4 +1,4 @@
-import { APP_LOCALE, APP_TIMEZONE } from "@/core/config/env";
+import { APP_LOCALE, APP_TIMEZONE } from "@/core/config/app";
 
 /**
  * Propósito: Encabezado de día para agendas agrupadas (lunes 13 oct / Monday, Oct 13).

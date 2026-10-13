@@ -1,6 +1,6 @@
 import { getFieldBookingContext } from "@/application/booking";
 import { assertViewerCanSeeField } from "@/application/catalog";
-import { APP_TIMEZONE } from "@/core/config/env";
+import { APP_TIMEZONE } from "@/core/config/app";
 import { getSession } from "@/core/auth/session";
 import { getTranslator } from "@/core/i18n/get-locale";
 import { listReservationsByField } from "@/data/reservation.repository";

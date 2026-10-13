@@ -1,4 +1,4 @@
-import { clearSession, getSession } from "@/core/auth/session";
+import { clearSession, getSession, readImpersonationReturnSession } from "@/core/auth/session";
 import { handleRoute } from "@/core/http/route";
 import { logoutRemote } from "@/data/auth.repository";
 
@@ -12,9 +12,15 @@ export async function POST() {
    */
   return handleRoute(async () => {
     const session = await getSession();
-    if (session) {
+    const adminSession = await readImpersonationReturnSession();
+    // En "ver como" hay dos sesiones de backend (la de solo lectura y la del super admin
+    // guardada en la cookie de retorno): se revocan las dos.
+    for (const sessionId of new Set([session?.sessionId, adminSession?.sessionId])) {
+      if (!sessionId) {
+        continue;
+      }
       try {
-        await logoutRemote(session.sessionId);
+        await logoutRemote(sessionId);
       } catch {
         // El logout local no debe fallar si el backend ya expiró la sesión.
       }

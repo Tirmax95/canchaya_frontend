@@ -8,7 +8,7 @@ import { AcceptInvitationButton } from "@/features/auth/accept-invitation-button
 import { AuthShell } from "@/features/auth/auth-shell";
 import { formatDateTime } from "@/shared/lib/datetime";
 import { Alert } from "@/shared/ui/alert";
-import { buttonClassName } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/ui/button-styles";
 import type { Metadata } from "next";
 import Link from "next/link";
 

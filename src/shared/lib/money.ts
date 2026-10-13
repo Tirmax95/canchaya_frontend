@@ -1,4 +1,4 @@
-import { APP_CURRENCY, APP_LOCALE } from "@/core/config/env";
+import { APP_CURRENCY, APP_LOCALE } from "@/core/config/app";
 
 /**
  * Propósito: Formatea montos COP para toda la UI sin duplicar Intl.

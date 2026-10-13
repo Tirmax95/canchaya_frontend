@@ -1,4 +1,4 @@
-import { requireSession, writeSession } from "@/core/auth/session";
+import { refreshSession, requireSession } from "@/core/auth/session";
 import { handleRoute, readJsonBody } from "@/core/http/route";
 import { acceptInvitation } from "@/data/team.repository";
 import { invitationTokenSchema, parseSchema } from "@/domain/schemas";
@@ -16,8 +16,7 @@ export async function POST(request: Request) {
     const session = await requireSession();
     const { token } = parseSchema(invitationTokenSchema, await readJsonBody(request));
     await acceptInvitation(token);
-    await writeSession({
-      ...session,
+    await refreshSession({
       roles: session.roles.includes("manager") ? session.roles : [...session.roles, "manager"],
     });
     return { redirectTo: "/admin" };

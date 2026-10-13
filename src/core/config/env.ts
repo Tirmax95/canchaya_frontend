@@ -1,3 +1,4 @@
+import "server-only";
 import { randomBytes } from "crypto";
 
 /** Valores de ejemplo publicados en el repo: firmar con ellos equivale a no firmar. */
@@ -65,10 +66,22 @@ function resolveSessionSecret(nodeEnv: string): string {
 /**
  * Propósito: Secreto compartido BFF↔API (opcional). Si se define, debe ser robusto.
  */
-function readBffSharedSecret(): string | null {
+function readBffSharedSecret(isProduction: boolean): string | null {
+  if (isProduction) {
+    if (!process.env.CLIENT_IP_HEADER?.trim()) {
+      /**
+       * Output:
+       * @throws Error — Sin IP real, el rate limit del backend se agota con la IP del BFF
+       */
+      throw new Error(
+        "CLIENT_IP_HEADER es obligatoria en producción (cabecera con la IP real que pone el proxy)",
+      );
+    }
+    return requireProductionSecret("BFF_SHARED_SECRET");
+  }
   /**
    * Output:
-   * @returns string | null — Secreto validado o null si no se usa
+   * @returns string | null — Secreto validado o null si no se usa (solo fuera de producción)
    */
   return process.env.BFF_SHARED_SECRET?.trim() ? requireProductionSecret("BFF_SHARED_SECRET") : null;
 }
@@ -104,13 +117,9 @@ export function getServerEnv() {
       "canchaya.session",
     ),
     appOrigin: new URL(appUrl).origin,
-    bffSharedSecret: readBffSharedSecret(),
+    bffSharedSecret: readBffSharedSecret(isProduction),
     secureCookies: isProduction || appUrl.startsWith("https://"),
     isProduction,
   };
 }
 
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "CanchaYa";
-export const APP_TIMEZONE = "America/Bogota";
-export const APP_LOCALE = "es-CO";
-export const APP_CURRENCY = "COP";

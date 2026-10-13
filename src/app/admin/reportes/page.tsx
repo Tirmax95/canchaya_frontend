@@ -17,7 +17,7 @@ import {
 } from "@/features/admin/platform/platform-ui";
 import { toDateInputValue } from "@/shared/lib/datetime";
 import { formatMoney } from "@/shared/lib/money";
-import { buttonClassName } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/ui/button-styles";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";
 

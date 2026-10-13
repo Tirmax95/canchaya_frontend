@@ -14,7 +14,9 @@ export type MatchStatus = (typeof MATCH_STATUSES)[number];
 
 export interface PickupMatch {
   id: number;
-  organizerId: number;
+  /** Solo presente cuando el backend recibió una sesión; el público anónimo no lo ve. */
+  organizerId?: number;
+  isOrganizer: boolean;
   sport: string;
   venueText: string;
   lat: number;

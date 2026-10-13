@@ -13,7 +13,7 @@ import {
 } from "@/domain/observability";
 import { PanelSection, StatCard, StatusPill, type PillTone } from "@/features/admin/platform/platform-ui";
 import { formatDateTime } from "@/shared/lib/datetime";
-import { buttonClassName } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/ui/button-styles";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { Metadata } from "next";

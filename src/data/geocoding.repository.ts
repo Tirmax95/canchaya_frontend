@@ -1,5 +1,5 @@
 import "server-only";
-import { APP_NAME } from "@/core/config/env";
+import { APP_NAME } from "@/core/config/app";
 import { AppError } from "@/core/errors/app-error";
 
 const NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search";

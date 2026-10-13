@@ -1,4 +1,4 @@
-import { requireSession, writeSession } from "@/core/auth/session";
+import { refreshSession, requireSession } from "@/core/auth/session";
 import { handleRoute, readJsonBody } from "@/core/http/route";
 import { confirmTwoFactorSetup } from "@/data/auth.repository";
 import { parseSchema, twoFactorCodeSchema } from "@/domain/schemas";
@@ -13,10 +13,10 @@ export async function POST(request: Request) {
    * @returns NextResponse — { recoveryCodes } (se muestran una sola vez)
    */
   return handleRoute(async () => {
-    const session = await requireSession();
+    await requireSession();
     const { code } = parseSchema(twoFactorCodeSchema, await readJsonBody(request));
     const { recoveryCodes, roles } = await confirmTwoFactorSetup(code);
-    await writeSession({ ...session, roles, twoFactorSetupRequired: false });
+    await refreshSession({ roles, twoFactorSetupRequired: false });
     return { recoveryCodes };
   }, "No se pudo activar la verificación");
 }
