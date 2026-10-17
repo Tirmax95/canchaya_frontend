@@ -5,7 +5,7 @@ import { SafeImage } from "@/shared/ui/safe-image";
 import Link from "next/link";
 
 /**
- * Propósito: Tarjeta de cancha con CTA de reserva.
+ * Propósito: Tarjeta de cancha; toda la tarjeta enlaza a los horarios de la cancha.
  */
 export async function FieldCard({ field }: { field: FieldCatalogItem }) {
   const { t, intlLocale } = await getTranslator();
@@ -16,7 +16,10 @@ export async function FieldCard({ field }: { field: FieldCatalogItem }) {
    * @returns JSX.Element — Card de cancha
    */
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/8 bg-pitch">
+    <Link
+      href={`/canchas/${field.id}`}
+      className="group block overflow-hidden rounded-[28px] border border-white/8 bg-pitch transition duration-200 hover:-translate-y-0.5 hover:border-lime/30 hover:shadow-[0_16px_40px_-24px_rgba(214,242,106,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime/60"
+    >
       <SafeImage
         src={field.imageFields}
         alt={t("catalog.courtName", { number: field.numberField })}
@@ -38,11 +41,11 @@ export async function FieldCard({ field }: { field: FieldCatalogItem }) {
             {formatMoney(field.basePricePerHour, intlLocale, consultLabel)}
             <span className="text-mist"> {t("catalog.perHour")}</span>
           </p>
-          <Link href={`/canchas/${field.id}`} className="text-sm font-semibold text-lime hover:underline">
+          <span className="text-sm font-semibold text-lime group-hover:underline">
             {t("catalog.seeSlots")}
-          </Link>
+          </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
