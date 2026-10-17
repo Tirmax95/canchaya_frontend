@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { AppError } from "@/core/errors/app-error";
-import { MAX_BOOKING_HOURS, MIN_BOOKING_HOURS } from "@/domain/booking";
+import {
+  BOOKING_CLOSE_HOUR,
+  BOOKING_OPEN_HOUR,
+  MAX_BOOKING_HOURS,
+  MIN_BOOKING_HOURS,
+} from "@/domain/booking";
 import {
   ESTABLISHMENT_AMENITIES,
   MAX_GALLERY_IMAGES,
@@ -284,6 +289,27 @@ export const createReservationSchema = z
         code: "custom",
         message: `La reserva debe durar entre ${MIN_BOOKING_HOURS} y ${MAX_BOOKING_HOURS} horas`,
         path: ["endTime"],
+      });
+    }
+
+    // Franjas en punto: evita reservas desalineadas que bloquean dos franjas pagando una.
+    if (start.getTime() % 3_600_000 !== 0 || end.getTime() % 3_600_000 !== 0) {
+      context.addIssue({
+        code: "custom",
+        message: "La reserva debe empezar y terminar en punto",
+        path: ["startTime"],
+      });
+      return;
+    }
+
+    // Colombia es UTC-5 fijo: hora local = hora UTC - 5.
+    const localStartHour = (start.getUTCHours() + 24 - 5) % 24;
+    const localEndHour = localStartHour + hours;
+    if (localStartHour < BOOKING_OPEN_HOUR || localEndHour > BOOKING_CLOSE_HOUR) {
+      context.addIssue({
+        code: "custom",
+        message: `Solo se puede reservar entre las 0${BOOKING_OPEN_HOUR}:00 y las ${BOOKING_CLOSE_HOUR}:00`,
+        path: ["startTime"],
       });
     }
   });
