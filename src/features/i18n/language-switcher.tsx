@@ -41,7 +41,7 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t("language.switcherLabel")}
-      className="flex rounded-full border border-white/12 bg-white/5 p-0.5"
+      className="flex rounded-full border border-white/[0.08] bg-white/[0.03] p-0.5"
     >
       {LOCALES.map((option) => {
         const isActive = option === locale;
@@ -54,8 +54,8 @@ export function LanguageSwitcher() {
             onClick={() => handleSelect(option)}
             className={
               isActive
-                ? "rounded-full bg-lime px-2.5 py-1 text-[11px] font-semibold tracking-wide text-ink"
-                : "rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide text-mist hover:text-bone"
+                ? "rounded-full bg-white/[0.1] px-2.5 py-1 text-[11px] font-semibold tracking-[0.08em] text-bone"
+                : "rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-[0.08em] text-mist/60 transition-colors hover:text-bone"
             }
           >
             {LOCALE_SHORT_LABEL[option]}
