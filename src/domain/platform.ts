@@ -267,6 +267,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "user.role_assigned": "Asignó un rol",
   "reservation.updated": "Modificó una reserva",
   "reservation.cancelled_by_staff": "Canceló una reserva desde el panel",
+  "booking_policy.updated": "Cambió las reglas de reserva",
 };
 
 /**
@@ -330,3 +331,30 @@ export function formatBillingPeriod(period: string, locale = "es-CO"): string {
     timeZone: "UTC",
   });
 }
+
+/** Reglas de reserva de la plataforma (las edita el super admin). */
+export interface BookingPolicy {
+  expirationEnabled: boolean;
+  onlinePaymentWindowMinutes: number;
+  onlinePaymentGraceMinutes: number;
+  manualConfirmationWindowMinutes: number;
+  manualConfirmationCutoffMinutes: number;
+  sweepIntervalMinutes: number;
+  maxOpenPendingPerUser: number;
+}
+
+export interface BookingPolicyRecord extends BookingPolicy {
+  updatedAt: string | null;
+}
+
+export type BookingPolicyNumericKey = Exclude<keyof BookingPolicy, "expirationEnabled">;
+
+/** Mismos rangos que el backend (BOOKING_POLICY_LIMITS y CHECK de la migración 014). */
+export const BOOKING_POLICY_LIMITS: Record<BookingPolicyNumericKey, { min: number; max: number }> = {
+  onlinePaymentWindowMinutes: { min: 5, max: 1440 },
+  onlinePaymentGraceMinutes: { min: 0, max: 120 },
+  manualConfirmationWindowMinutes: { min: 30, max: 10080 },
+  manualConfirmationCutoffMinutes: { min: 0, max: 1440 },
+  sweepIntervalMinutes: { min: 1, max: 60 },
+  maxOpenPendingPerUser: { min: 1, max: 20 },
+};

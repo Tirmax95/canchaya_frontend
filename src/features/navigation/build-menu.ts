@@ -54,6 +54,7 @@ function buildSuperAdminItems(t: TranslateFn): SideMenuItem[] {
     { href: "/admin/tenants", label: t("admin.tenants"), icon: "tenants" },
     { href: "/admin/facturacion", label: t("admin.billing"), icon: "billing" },
     { href: "/admin/pagos", label: t("admin.payments"), icon: "payments" },
+    { href: "/admin/reglas-reservas", label: t("admin.bookingRules"), icon: "reservations" },
     { href: "/admin/usuarios", label: t("admin.users"), icon: "users" },
     { href: "/admin/reportes", label: t("admin.reports"), icon: "reports" },
     { href: "/admin/correos", label: t("admin.emails"), icon: "emails" },

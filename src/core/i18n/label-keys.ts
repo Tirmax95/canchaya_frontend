@@ -123,6 +123,7 @@ export const AUDIT_ACTION_KEYS: Record<string, MessageKey> = {
   "user.role_assigned": "labels.auditRoleAssigned",
   "reservation.updated": "labels.auditReservationUpdated",
   "reservation.cancelled_by_staff": "labels.auditReservationCancelledByStaff",
+  "booking_policy.updated": "labels.auditBookingPolicyUpdated",
 };
 
 const TENANT_MODULE_LABEL_KEYS = {

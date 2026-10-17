@@ -4,6 +4,8 @@ import type { SessionUser } from "@/domain/user";
 import type { SystemErrorLogPage } from "@/domain/observability";
 import type {
   AuditEntry,
+  BookingPolicy,
+  BookingPolicyRecord,
   EmailOutboxPage,
   EmailStatus,
   InvoiceGenerationResult,
@@ -408,4 +410,73 @@ export async function verifyInvoicePayment(transactionId: string): Promise<Invoi
     status: INVOICE_PAYMENT_RESULTS.find((result) => result === payload.status) ?? "error",
     invoiceId: typeof payload.invoiceId === "number" ? payload.invoiceId : null,
   };
+}
+
+interface BookingPolicyPayload {
+  expiration_enabled: boolean;
+  online_payment_window_minutes: number;
+  online_payment_grace_minutes: number;
+  manual_confirmation_window_minutes: number;
+  manual_confirmation_cutoff_minutes: number;
+  sweep_interval_minutes: number;
+  max_open_pending_per_user: number;
+  updated_at: string | null;
+}
+
+/**
+ * Propósito: Respuesta snake_case del backend → política tipada.
+ */
+function toBookingPolicy(payload: BookingPolicyPayload): BookingPolicyRecord {
+  /**
+   * Output:
+   * @returns BookingPolicyRecord — Política para la UI
+   */
+  return {
+    expirationEnabled: payload.expiration_enabled === true,
+    onlinePaymentWindowMinutes: Number(payload.online_payment_window_minutes),
+    onlinePaymentGraceMinutes: Number(payload.online_payment_grace_minutes),
+    manualConfirmationWindowMinutes: Number(payload.manual_confirmation_window_minutes),
+    manualConfirmationCutoffMinutes: Number(payload.manual_confirmation_cutoff_minutes),
+    sweepIntervalMinutes: Number(payload.sweep_interval_minutes),
+    maxOpenPendingPerUser: Number(payload.max_open_pending_per_user),
+    updatedAt: payload.updated_at,
+  };
+}
+
+/**
+ * Propósito: Reglas de reserva vigentes. Solo super admin.
+ */
+export async function getBookingPolicy(): Promise<BookingPolicyRecord> {
+  const payload = await requestAuthedBackend<{ policy: BookingPolicyPayload }>({
+    path: "/platform/booking-policy",
+  });
+  /**
+   * Output:
+   * @returns BookingPolicyRecord — Política vigente
+   */
+  return toBookingPolicy(payload.policy);
+}
+
+/**
+ * Propósito: Reemplaza las reglas de reserva. Solo super admin.
+ */
+export async function updateBookingPolicy(policy: BookingPolicy): Promise<BookingPolicyRecord> {
+  const payload = await requestAuthedBackend<{ policy: BookingPolicyPayload }>({
+    path: "/platform/booking-policy",
+    method: "PUT",
+    body: {
+      expiration_enabled: policy.expirationEnabled,
+      online_payment_window_minutes: policy.onlinePaymentWindowMinutes,
+      online_payment_grace_minutes: policy.onlinePaymentGraceMinutes,
+      manual_confirmation_window_minutes: policy.manualConfirmationWindowMinutes,
+      manual_confirmation_cutoff_minutes: policy.manualConfirmationCutoffMinutes,
+      sweep_interval_minutes: policy.sweepIntervalMinutes,
+      max_open_pending_per_user: policy.maxOpenPendingPerUser,
+    },
+  });
+  /**
+   * Output:
+   * @returns BookingPolicyRecord — Política guardada
+   */
+  return toBookingPolicy(payload.policy);
 }

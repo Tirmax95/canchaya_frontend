@@ -6,6 +6,7 @@ import {
   MAX_BOOKING_HOURS,
   MIN_BOOKING_HOURS,
 } from "@/domain/booking";
+import { BOOKING_POLICY_LIMITS, type BookingPolicyNumericKey } from "@/domain/platform";
 import {
   ESTABLISHMENT_AMENITIES,
   MAX_GALLERY_IMAGES,
@@ -326,6 +327,28 @@ const statusReasonSchema = z
   .trim()
   .min(3, "Escribe un motivo (mínimo 3 caracteres)")
   .max(STATUS_REASON_MAX_LENGTH);
+
+/**
+ * Propósito: Entero dentro del rango que acepta el backend para esa regla de reserva.
+ */
+function bookingPolicyMinutes(key: BookingPolicyNumericKey) {
+  const { min, max } = BOOKING_POLICY_LIMITS[key];
+  /**
+   * Output:
+   * @returns ZodNumber — Entero en [min, max]
+   */
+  return z.coerce.number().int().min(min).max(max);
+}
+
+export const bookingPolicySchema = z.object({
+  expirationEnabled: z.boolean(),
+  onlinePaymentWindowMinutes: bookingPolicyMinutes("onlinePaymentWindowMinutes"),
+  onlinePaymentGraceMinutes: bookingPolicyMinutes("onlinePaymentGraceMinutes"),
+  manualConfirmationWindowMinutes: bookingPolicyMinutes("manualConfirmationWindowMinutes"),
+  manualConfirmationCutoffMinutes: bookingPolicyMinutes("manualConfirmationCutoffMinutes"),
+  sweepIntervalMinutes: bookingPolicyMinutes("sweepIntervalMinutes"),
+  maxOpenPendingPerUser: bookingPolicyMinutes("maxOpenPendingPerUser"),
+});
 
 export const tenantActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("suspend"), reason: statusReasonSchema }),

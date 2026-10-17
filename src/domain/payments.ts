@@ -49,6 +49,10 @@ export interface ReservationPaymentContext {
   amountPesos: number;
   fieldName: string;
   establishmentName: string;
+  /** Hasta cuándo la reserva pendiente aparta el horario; null = no vence. */
+  expiresAt: string | null;
+  /** Cuándo se canceló por vencida; null si no venció. */
+  expiredAt: string | null;
   methods: PublicPaymentMethod[];
   intent: PublicPaymentIntent | null;
 }

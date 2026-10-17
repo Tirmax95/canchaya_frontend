@@ -15,7 +15,14 @@ const statusStyles: Record<ReservationStatus, string> = {
 /**
  * Propósito: Badge de estado de reserva con copy localizado.
  */
-export function StatusBadge({ status }: { status: ReservationStatus }) {
+export function StatusBadge({
+  status,
+  isExpired = false,
+}: {
+  status: ReservationStatus;
+  /** Cancelada sola por vencimiento: se muestra "Expirada". */
+  isExpired?: boolean;
+}) {
   const { t } = useI18n();
   /**
    * Output:
@@ -25,10 +32,10 @@ export function StatusBadge({ status }: { status: ReservationStatus }) {
     <span
       className={cn(
         "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider",
-        statusStyles[status],
+        isExpired ? "bg-white/8 text-mist" : statusStyles[status],
       )}
     >
-      {t(RESERVATION_STATUS_KEYS[status])}
+      {isExpired ? t("labels.reservationExpired") : t(RESERVATION_STATUS_KEYS[status])}
     </span>
   );
 }

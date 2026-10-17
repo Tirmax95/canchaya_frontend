@@ -200,6 +200,8 @@ function sanitizeCheckoutContext(payload: ReservationPaymentContext): Reservatio
    */
   return {
     ...payload,
+    expiresAt: typeof payload.expiresAt === "string" ? payload.expiresAt : null,
+    expiredAt: typeof payload.expiredAt === "string" ? payload.expiredAt : null,
     methods: Array.isArray(payload.methods) ? payload.methods : [],
     intent: payload.intent ? sanitizeIntent(payload.intent) : null,
   };

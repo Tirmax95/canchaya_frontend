@@ -16,6 +16,7 @@ import { useConfirmAction } from "@/shared/ui/confirm-dialog";
 import type { ReservationStatus } from "@/domain/reservation";
 import { RESERVATION_STATUSES } from "@/domain/reservation";
 import { StatusBadge } from "@/shared/ui/badge";
+import { ReservationDeadline } from "@/features/booking/reservation-deadline";
 import { cn } from "@/shared/lib/cn";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -179,10 +180,24 @@ export function ReservationCheckout({
               {formatDateTime(context.endTime, intlLocale)}
             </p>
           </div>
-          <StatusBadge status={toReservationStatus(isPaid ? "confirmed" : context.status)} />
+          <StatusBadge
+            status={toReservationStatus(isPaid ? "confirmed" : context.status)}
+            isExpired={!isPaid && context.status === "cancelled" && Boolean(context.expiredAt)}
+          />
         </div>
         <p className="mt-4 font-display text-4xl text-lime">{formattedAmount}</p>
+        {isPayable && !isPaid && context.expiresAt ? (
+          <ReservationDeadline
+            expiresAt={context.expiresAt}
+            mode={context.methods.length > 0 ? "pay" : "confirm"}
+            className="mt-3"
+          />
+        ) : null}
       </article>
+
+      {!isPaid && context.status === "cancelled" && context.expiredAt ? (
+        <Alert tone="info">{t("booking.expiredNotice")}</Alert>
+      ) : null}
 
       {isPaid ? (
         <Alert tone="info">

@@ -22,7 +22,7 @@ import {
   type ReservationTenantGroup,
   type ReservationTenantOption,
 } from "@/domain/reservation-inbox";
-import type { ReservationView } from "@/domain/reservation";
+import { isExpiredReservation, type ReservationView } from "@/domain/reservation";
 import type { ClientSessionUser } from "@/domain/user";
 import { formatHourOfDay, toLocalHourOfDay } from "@/domain/venue-occupancy";
 import { useReservationActions } from "@/features/booking/use-reservation-actions";
@@ -810,7 +810,7 @@ function FixtureRow({
       <p className="shrink-0 text-sm tabular-nums text-bone">
         {formatMoney(reservation.priceEstimate, intlLocale, t("common.consult"))}
       </p>
-      <StatusBadge status={reservation.status} />
+      <StatusBadge status={reservation.status} isExpired={isExpiredReservation(reservation)} />
       {canMutate && (canConfirm || canCancel) ? (
         <div className="flex shrink-0 gap-1.5">
           {canConfirm ? (

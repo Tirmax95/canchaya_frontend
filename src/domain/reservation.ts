@@ -17,6 +17,21 @@ export interface Reservation {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** Hasta cuándo la reserva pendiente aparta el horario; null = no vence. */
+  expiresAt?: string | null;
+  /** Cuándo se canceló por vencida; null si no venció. */
+  expiredAt?: string | null;
+}
+
+/**
+ * Propósito: True si la reserva se canceló sola porque venció su plazo.
+ */
+export function isExpiredReservation(reservation: Pick<Reservation, "status" | "expiredAt">): boolean {
+  /**
+   * Output:
+   * @returns boolean — Cancelada por vencimiento
+   */
+  return reservation.status === "cancelled" && Boolean(reservation.expiredAt);
 }
 
 export interface ReservationView extends Reservation {

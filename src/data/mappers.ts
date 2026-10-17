@@ -65,6 +65,8 @@ interface RawReservation {
   notes?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
+  expiresAt?: unknown;
+  expiredAt?: unknown;
 }
 
 /**
@@ -325,5 +327,7 @@ export function toReservation(raw: RawReservation): Reservation {
     notes: typeof raw.notes === "string" ? raw.notes : undefined,
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
+    expiresAt: raw.expiresAt ? toIso(raw.expiresAt) : null,
+    expiredAt: raw.expiredAt ? toIso(raw.expiredAt) : null,
   };
 }

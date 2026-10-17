@@ -2,12 +2,13 @@
 
 import { isStaff } from "@/core/auth/roles";
 import { useI18n } from "@/core/i18n/provider";
-import type { ReservationView } from "@/domain/reservation";
+import { isExpiredReservation, type ReservationView } from "@/domain/reservation";
 import type { ClientSessionUser } from "@/domain/user";
 import { useReservationActions } from "@/features/booking/use-reservation-actions";
 import { formatDateTime } from "@/shared/lib/datetime";
 import { formatMoney } from "@/shared/lib/money";
 import { StatusBadge } from "@/shared/ui/badge";
+import { ReservationDeadline } from "@/features/booking/reservation-deadline";
 import { Button, ButtonLink } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
 import Link from "next/link";
@@ -88,7 +89,13 @@ export function ReservationList({
                 ) : null}
               </div>
               <div className="flex flex-col items-start gap-3 sm:items-end">
-                <StatusBadge status={reservation.status} />
+                <StatusBadge
+                  status={reservation.status}
+                  isExpired={isExpiredReservation(reservation)}
+                />
+                {reservation.status === "pending" && reservation.expiresAt ? (
+                  <ReservationDeadline expiresAt={reservation.expiresAt} />
+                ) : null}
                 <p className="text-sm text-bone">
                   {formatMoney(reservation.priceEstimate, intlLocale, t("common.consult"))}
                 </p>
