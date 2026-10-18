@@ -14,8 +14,9 @@ const LEGAL_LINKS = [
 ] as const;
 
 /**
- * Propósito: Marco común de las páginas legales públicas. Muestra siempre el aviso de
- * borrador para que nadie tome el texto como definitivo antes de la revisión legal.
+ * Propósito: Marco común de las páginas legales públicas. Mientras falten los datos del
+ * responsable o la revisión legal (`isDraft`), muestra el aviso de borrador para que nadie tome
+ * el texto como definitivo.
  */
 export async function LegalDocument({
   kicker,
@@ -23,6 +24,7 @@ export async function LegalDocument({
   intro,
   currentPath,
   sections = [],
+  isDraft = true,
   children,
 }: {
   kicker: string;
@@ -30,6 +32,7 @@ export async function LegalDocument({
   intro: string;
   currentPath: string;
   sections?: LegalSection[];
+  isDraft?: boolean;
   children?: React.ReactNode;
 }) {
   const { t } = await getTranslator();
@@ -40,16 +43,20 @@ export async function LegalDocument({
   return (
     <article className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6">
       <PageHeader kicker={kicker} title={title} description={intro} />
-      <aside
-        role="note"
-        className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm leading-6 text-bone"
-      >
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200">
-          {t("legal.draftBadge")}
-        </p>
-        <p className="mt-1">{t("legal.draftNotice")}</p>
-        <p className="mt-1 text-mist">{t("legal.lastUpdated")}</p>
-      </aside>
+      {isDraft ? (
+        <aside
+          role="note"
+          className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm leading-6 text-bone"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200">
+            {t("legal.draftBadge")}
+          </p>
+          <p className="mt-1">{t("legal.draftNotice")}</p>
+          <p className="mt-1 text-mist">{t("legal.lastUpdated")}</p>
+        </aside>
+      ) : (
+        <p className="text-xs text-mist">{t("legal.lastUpdatedFinal")}</p>
+      )}
       {sections.map((section) => (
         <section key={section.title} className="space-y-3">
           <h2 className="font-display text-2xl text-bone">{section.title}</h2>

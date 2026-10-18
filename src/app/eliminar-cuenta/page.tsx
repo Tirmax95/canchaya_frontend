@@ -1,4 +1,5 @@
 import { getSession } from "@/core/auth/session";
+import { readLegalEntity } from "@/core/config/legal";
 import { getTranslator } from "@/core/i18n/get-locale";
 import { getTwoFactorStatus } from "@/data/auth.repository";
 import { DeleteAccountForm } from "@/features/legal/delete-account-form";
@@ -47,7 +48,8 @@ async function readTwoFactorEnabled(): Promise<boolean | null> {
 export default async function DeleteAccountPage() {
   const [{ t }, session] = await Promise.all([getTranslator(), getSession()]);
   const isTwoFactorEnabled = session && !session.isReadOnly ? await readTwoFactorEnabled() : null;
-  const contact = t("legal.pendingContact");
+  const entity = readLegalEntity();
+  const contact = entity.contactEmail ?? t("legal.pendingContact");
 
   /**
    * Output:
@@ -55,6 +57,7 @@ export default async function DeleteAccountPage() {
    */
   return (
     <LegalDocument
+      isDraft={!entity.isFinal}
       kicker={t("legal.deletion.kicker")}
       title={t("legal.deletion.title")}
       intro={t("legal.deletion.intro")}

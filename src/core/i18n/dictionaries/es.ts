@@ -75,6 +75,7 @@ export const esMessages = {
       "Borrador pendiente de revisión legal. Este texto describe cómo funciona CanchaYa hoy, pero todavía no es la versión definitiva y puede cambiar.",
     lastUpdated: "Última actualización del borrador: 18 de octubre de 2026",
     pendingContact: "[correo de contacto pendiente]",
+    lastUpdatedFinal: "Última actualización: 18 de octubre de 2026",
     relatedTitle: "Documentos relacionados",
     terms: {
       kicker: "Legal",
@@ -84,6 +85,8 @@ export const esMessages = {
       s1Title: "1. Quiénes somos",
       s1Body:
         "CanchaYa es una plataforma que conecta a jugadores con sedes deportivas. La razón social, el domicilio y los datos de contacto del responsable se completarán en la versión revisada de este documento. Mientras tanto puedes escribirnos a {contact}.",
+      s1BodyFinal:
+        "CanchaYa es una plataforma que conecta a jugadores con sedes deportivas, operada por {name} (NIT {taxId}), con domicilio en {address}. Puedes escribirnos a {contact}.",
       s2Title: "2. Tu cuenta",
       s2Body1:
         "Para reservar necesitas una cuenta con un correo válido y una contraseña. Eres responsable de mantenerla en secreto y de la actividad hecha con tu cuenta. Puedes activar la verificación en dos pasos desde Seguridad.",
@@ -124,6 +127,8 @@ export const esMessages = {
       s1Title: "1. Responsable",
       s1Body:
         "El responsable del tratamiento es CanchaYa. Los datos completos del responsable se añadirán en la versión revisada. Para cualquier consulta sobre tus datos escríbenos a {contact}.",
+      s1BodyFinal:
+        "El responsable del tratamiento es {name} (NIT {taxId}), con domicilio en {address}. Para cualquier consulta, petición o reclamo sobre tus datos escríbenos a {contact}.",
       s2Title: "2. Qué datos recogemos",
       s2Account:
         "Cuenta: tu correo, tu nombre y, si quieres, tu número de celular. La contraseña se guarda solo como un hash; nadie puede leerla.",
@@ -161,7 +166,7 @@ export const esMessages = {
         "Antes de eliminarla debes cancelar tus reservas futuras y, si eres parte del equipo de una sede, pedir que te quiten de ella.",
       s7Title: "7. Tus derechos",
       s7Body:
-        "Puedes ver y corregir tus datos desde tu perfil, eliminar tu cuenta en cualquier momento y escribirnos para pedir una copia de tus datos u oponerte a algún uso. La normativa de protección de datos aplicable se precisará en la revisión legal.",
+        "Puedes ver y corregir tus datos desde tu perfil, eliminar tu cuenta en cualquier momento y escribirnos para pedir una copia de tus datos u oponerte a algún uso. Como titular, la Ley 1581 de 2012 de Colombia y sus decretos reglamentarios te dan derecho a conocer, actualizar, rectificar y suprimir tus datos, a pedir prueba de tu autorización y a revocarla. Respondemos consultas en máximo 10 días hábiles y reclamos en máximo 15. Si no quedas conforme, puedes acudir a la Superintendencia de Industria y Comercio (SIC).",
       s8Title: "8. Seguridad",
       s8Body:
         "Usamos conexiones cifradas, sesiones en cookies protegidas, contraseñas con hash y verificación en dos pasos opcional. Ningún sistema es infalible; si detectamos un incidente que te afecte, te avisaremos.",

@@ -1,3 +1,4 @@
+import { readLegalEntity } from "@/core/config/legal";
 import { getTranslator } from "@/core/i18n/get-locale";
 import { LegalDocument } from "@/features/legal/legal-document";
 import type { Metadata } from "next";
@@ -20,19 +21,30 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function TermsPage() {
   const { t } = await getTranslator();
-  const contact = t("legal.pendingContact");
+  const entity = readLegalEntity();
+  const contact = entity.contactEmail ?? t("legal.pendingContact");
+  const s1Body =
+    entity.name && entity.taxId && entity.address && entity.contactEmail
+      ? t("legal.terms.s1BodyFinal", {
+          name: entity.name,
+          taxId: entity.taxId,
+          address: entity.address,
+          contact,
+        })
+      : t("legal.terms.s1Body", { contact });
   /**
    * Output:
    * @returns JSX.Element — Términos en borrador
    */
   return (
     <LegalDocument
+      isDraft={!entity.isFinal}
       kicker={t("legal.terms.kicker")}
       title={t("legal.terms.title")}
       intro={t("legal.terms.intro")}
       currentPath="/terminos"
       sections={[
-        { title: t("legal.terms.s1Title"), paragraphs: [t("legal.terms.s1Body", { contact })] },
+        { title: t("legal.terms.s1Title"), paragraphs: [s1Body] },
         {
           title: t("legal.terms.s2Title"),
           paragraphs: [t("legal.terms.s2Body1"), t("legal.terms.s2Body2")],

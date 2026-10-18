@@ -1,3 +1,4 @@
+import { readLegalEntity } from "@/core/config/legal";
 import { getTranslator } from "@/core/i18n/get-locale";
 import { LegalDocument } from "@/features/legal/legal-document";
 import type { Metadata } from "next";
@@ -20,19 +21,30 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function PrivacyPage() {
   const { t } = await getTranslator();
-  const contact = t("legal.pendingContact");
+  const entity = readLegalEntity();
+  const contact = entity.contactEmail ?? t("legal.pendingContact");
+  const s1Body =
+    entity.name && entity.taxId && entity.address && entity.contactEmail
+      ? t("legal.privacy.s1BodyFinal", {
+          name: entity.name,
+          taxId: entity.taxId,
+          address: entity.address,
+          contact,
+        })
+      : t("legal.privacy.s1Body", { contact });
   /**
    * Output:
    * @returns JSX.Element — Política de privacidad en borrador
    */
   return (
     <LegalDocument
+      isDraft={!entity.isFinal}
       kicker={t("legal.privacy.kicker")}
       title={t("legal.privacy.title")}
       intro={t("legal.privacy.intro")}
       currentPath="/privacidad"
       sections={[
-        { title: t("legal.privacy.s1Title"), paragraphs: [t("legal.privacy.s1Body", { contact })] },
+        { title: t("legal.privacy.s1Title"), paragraphs: [s1Body] },
         {
           title: t("legal.privacy.s2Title"),
           paragraphs: [

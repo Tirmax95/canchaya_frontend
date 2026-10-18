@@ -77,6 +77,7 @@ export const enMessages = {
       "Draft pending legal review. This text describes how CanchaYa works today, but it is not the final version yet and may change.",
     lastUpdated: "Draft last updated: October 18, 2026",
     pendingContact: "[contact email pending]",
+    lastUpdatedFinal: "Last updated: October 18, 2026",
     relatedTitle: "Related documents",
     terms: {
       kicker: "Legal",
@@ -86,6 +87,8 @@ export const enMessages = {
       s1Title: "1. Who we are",
       s1Body:
         "CanchaYa is a platform that connects players with sports venues. The legal name, address and contact details of the operator will be added in the reviewed version of this document. In the meantime you can write to us at {contact}.",
+      s1BodyFinal:
+        "CanchaYa is a platform that connects players with sports venues, operated by {name} (tax ID {taxId}), located at {address}. You can write to us at {contact}.",
       s2Title: "2. Your account",
       s2Body1:
         "You need an account with a valid email and a password to book. You are responsible for keeping it secret and for activity under your account. You can turn on two-step verification from Security.",
@@ -125,6 +128,8 @@ export const enMessages = {
       s1Title: "1. Controller",
       s1Body:
         "The data controller is CanchaYa. Full controller details will be added in the reviewed version. For any question about your data, write to us at {contact}.",
+      s1BodyFinal:
+        "The data controller is {name} (tax ID {taxId}), located at {address}. For any question, request or complaint about your data, write to us at {contact}.",
       s2Title: "2. What we collect",
       s2Account:
         "Account: your email, your name and, optionally, your mobile number. Your password is stored only as a hash; nobody can read it.",
@@ -161,7 +166,7 @@ export const enMessages = {
         "Before deleting it you must cancel your upcoming bookings and, if you are on a venue's staff, ask to be removed from it.",
       s7Title: "7. Your rights",
       s7Body:
-        "You can view and correct your data from your profile, delete your account at any time and write to us to request a copy of your data or object to a use. The applicable data protection law will be specified in the legal review.",
+        "You can view and correct your data from your profile, delete your account at any time and write to us to request a copy of your data or object to a use. As the data subject, Colombian Law 1581 of 2012 and its regulations give you the right to access, update, correct and delete your data, to request proof of your consent and to revoke it. We answer queries within 10 business days and complaints within 15. If you are not satisfied, you can turn to the Superintendence of Industry and Commerce (SIC).",
       s8Title: "8. Security",
       s8Body:
         "We use encrypted connections, protected session cookies, hashed passwords and optional two-step verification. No system is infallible; if we detect an incident that affects you, we will let you know.",
