@@ -30,6 +30,7 @@ import { cn } from "@/shared/lib/cn";
 import { formatDayHeading } from "@/shared/lib/datetime";
 import { formatMoney } from "@/shared/lib/money";
 import { StatusBadge } from "@/shared/ui/badge";
+import { ContactPlayerButton } from "@/features/messaging/contact-player-button";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
 import {
@@ -781,7 +782,7 @@ function FixtureRow({
   return (
     <li
       className={cn(
-        "flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:gap-3",
+        "relative flex flex-col gap-2 px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2",
         isCancelled ? "opacity-55" : "",
       )}
       style={{ contentVisibility: "auto", containIntrinsicSize: "0 52px" }}
@@ -795,7 +796,7 @@ function FixtureRow({
         <span className="text-mist"> – </span>
         {formatHourOfDay(toLocalHourOfDay(reservation.endTime))}
       </p>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-[8rem] flex-1">
         <p className="truncate text-sm text-bone">
           {reservation.fieldName}
           {showEstablishment ? (
@@ -811,6 +812,12 @@ function FixtureRow({
         {formatMoney(reservation.priceEstimate, intlLocale, t("common.consult"))}
       </p>
       <StatusBadge status={reservation.status} isExpired={isExpiredReservation(reservation)} />
+      <ContactPlayerButton
+        reservationId={reservation.reservationId}
+        fieldName={reservation.fieldName}
+        establishmentName={reservation.establishmentName}
+        startTime={reservation.startTime}
+      />
       {canMutate && (canConfirm || canCancel) ? (
         <div className="flex shrink-0 gap-1.5">
           {canConfirm ? (

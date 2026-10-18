@@ -232,6 +232,7 @@ export function ReservationComposer({
       <Button type="submit" className="w-full" isLoading={isSubmitting}>
         {isAuthenticated ? t("booking.confirmReservation") : t("booking.loginToBook")}
       </Button>
+      <p className="text-center text-[11px] leading-4 text-mist/70">{t("messaging.contactConsent")}</p>
     </form>
   );
 }

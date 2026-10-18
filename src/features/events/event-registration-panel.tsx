@@ -13,6 +13,7 @@ import { formatEntryFee } from "@/features/events/event-format";
 import { Alert } from "@/shared/ui/alert";
 import { Button, ButtonLink } from "@/shared/ui/button";
 import { useConfirmAction } from "@/shared/ui/confirm-dialog";
+import { OpenConversationButton } from "@/features/messaging/open-conversation-button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -156,6 +157,11 @@ export function EventRegistrationPanel({
                   <p className="text-xs leading-5 text-mist">{t("events.payAtVenue")}</p>
                 )
               ) : null}
+              <OpenConversationButton
+                subjectType="event_registration"
+                subjectId={registration.registrationId}
+                label={t("messaging.writeToOrganizer")}
+              />
               {["draft", "registration_open", "registration_closed"].includes(event.status) ? (
                 <button
                   type="button"
@@ -219,6 +225,7 @@ export function EventRegistrationPanel({
             <Button className="w-full" isLoading={isWorking} onClick={register} disabled={!teamId}>
               {isFull ? t("events.registerSubmitWaitlist") : t("events.registerSubmit")}
             </Button>
+            <p className="text-center text-[11px] leading-4 text-mist/70">{t("messaging.contactConsentEvent")}</p>
           </div>
         )
       ) : activeRegistrations.length === 0 ? (

@@ -123,6 +123,7 @@ async function loadStaffAccess(): Promise<AdminAccess | null> {
  */
 export async function buildSideMenu(session: SessionUser, t: TranslateFn): Promise<SideMenuModel> {
   const profileItem: SideMenuItem = { href: "/perfil", label: t("nav.profile"), icon: "profile" };
+  const messagesItem: SideMenuItem = { href: "/mensajes", label: t("nav.messages"), icon: "messages" };
   const userLabel = session.fullName ?? session.email;
   const access = isStaff(session) ? await loadStaffAccess() : null;
 
@@ -135,7 +136,7 @@ export async function buildSideMenu(session: SessionUser, t: TranslateFn): Promi
     return {
       workspaceEyebrow: t("nav.menuLabel"),
       workspaceLabel: userLabel,
-      sections: [exploreSection, { title: t("admin.account"), items: [profileItem] }],
+      sections: [exploreSection, { title: t("admin.account"), items: [messagesItem, profileItem] }],
     };
   }
 
@@ -160,6 +161,10 @@ export async function buildSideMenu(session: SessionUser, t: TranslateFn): Promi
   }
   if (access.isTenantOwner && access.enabledModules.includes("staff")) {
     accountItems.push({ href: TENANT_TEAM_PATH, label: t("admin.team"), icon: "team" });
+  }
+  if (!access.enabledModules.includes("messages")) {
+    // Sin el módulo de la sede igual conversa como jugador (sus reservas y equipos).
+    accountItems.push(messagesItem);
   }
   accountItems.push(profileItem);
   sections.push({ title: t("admin.account"), items: accountItems });

@@ -14,6 +14,7 @@ import {
 } from "@/domain/establishment";
 import { TENANT_MODULES } from "@/domain/tenant-modules";
 import { EVENT_FORMATS, EVENT_LIMITS, EVENT_SPORTS, isUploadedCoverPath } from "@/domain/events";
+import { CONVERSATION_SUBJECT_TYPES, MAX_MESSAGE_LENGTH } from "@/domain/messaging";
 import { MAX_COMMISSION_BPS, MAX_MONTHLY_FEE, STATUS_REASON_MAX_LENGTH } from "@/domain/platform";
 import {
   getPasswordByteLength,
@@ -611,4 +612,13 @@ export const generateEventCoverSchema = z.object({
   name: z.string().trim().min(3, "Escribe el nombre del evento").max(120),
   sport: z.enum(EVENT_SPORTS),
   format: z.enum(EVENT_FORMATS),
+});
+
+export const openConversationSchema = z.object({
+  subjectType: z.enum(CONVERSATION_SUBJECT_TYPES),
+  subjectId: positiveIdSchema,
+});
+
+export const sendMessageSchema = z.object({
+  body: z.string().trim().min(1, "Escribe un mensaje").max(MAX_MESSAGE_LENGTH),
 });

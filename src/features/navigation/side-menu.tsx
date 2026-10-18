@@ -23,12 +23,15 @@ export type SideMenuIcon =
   | "teams"
   | "venues"
   | "bookings"
-  | "profile";
+  | "profile"
+  | "messages";
 
 export interface SideMenuItem {
   href: string;
   label: string;
   icon: SideMenuIcon;
+  /** Contador (p. ej. mensajes sin leer); 0 o ausente no se muestra. */
+  badge?: number;
 }
 
 const MENU_ICON_PATHS: Record<SideMenuIcon, string> = {
@@ -54,6 +57,7 @@ const MENU_ICON_PATHS: Record<SideMenuIcon, string> = {
   venues: "M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Zm0-9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
   bookings: "M7 3v3m10-3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm3 8 2.5 2.5L16 10",
   profile: "M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+  messages: "M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-5 4v-4h-.5A1.5 1.5 0 0 1 4 15.5v-9Z",
 };
 
 const FALLBACK_MENU_ICON_PATH = "M4 6h16M4 12h16M4 18h10";
@@ -236,8 +240,19 @@ function MenuLink({
             : "text-mist hover:bg-white/5 hover:text-bone",
       )}
     >
-      <MenuIcon icon={item.icon} />
+      <span className="relative">
+        <MenuIcon icon={item.icon} />
+        {item.badge && isCollapsed ? (
+          <span aria-hidden className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-lime" />
+        ) : null}
+      </span>
       <span className={cn("whitespace-nowrap", isCollapsed && "sr-only")}>{item.label}</span>
+      {item.badge && !isCollapsed ? (
+        <span className="ml-auto rounded-full bg-lime px-1.5 text-[10px] font-bold leading-4 text-ink">
+          {item.badge > 99 ? "99+" : item.badge}
+          <span className="sr-only"> sin leer</span>
+        </span>
+      ) : null}
     </Link>
   );
 }

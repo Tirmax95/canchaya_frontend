@@ -8,6 +8,7 @@ import { useReservationActions } from "@/features/booking/use-reservation-action
 import { formatDateTime } from "@/shared/lib/datetime";
 import { formatMoney } from "@/shared/lib/money";
 import { StatusBadge } from "@/shared/ui/badge";
+import { OpenConversationButton } from "@/features/messaging/open-conversation-button";
 import { ReservationDeadline } from "@/features/booking/reservation-deadline";
 import { Button, ButtonLink } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -99,7 +100,15 @@ export function ReservationList({
                 <p className="text-sm text-bone">
                   {formatMoney(reservation.priceEstimate, intlLocale, t("common.consult"))}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {reservation.status !== "cancelled" ? (
+                    <OpenConversationButton
+                      subjectType="reservation"
+                      subjectId={reservation.reservationId}
+                      label={t("messaging.writeToVenue")}
+                      className="px-4 py-2.5 text-sm"
+                    />
+                  ) : null}
                   {!isStaff(user) && reservation.status === "pending" ? (
                     <ButtonLink href={`/reservas/${reservation.reservationId}/pagar`}>
                       {t("booking.pay")}

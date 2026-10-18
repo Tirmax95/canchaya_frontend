@@ -17,6 +17,7 @@ const TENANT_MODULE_HINT_KEYS: Record<TenantModule, MessageKey> = {
   fields: "admin.moduleCourtsHint",
   reservations: "admin.moduleReservationsHint",
   events: "admin.moduleEventsHint",
+  messages: "admin.moduleMessagesHint",
   matches: "admin.moduleMatchesHint",
   challenges: "admin.moduleChallengesHint",
   teams: "admin.moduleTeamsHint",

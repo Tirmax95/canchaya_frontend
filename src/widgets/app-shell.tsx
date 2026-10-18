@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/core/i18n/provider";
+import { MESSAGES_READ_EVENT } from "@/domain/messaging";
 import type { SideMenuModel } from "@/features/navigation/build-menu";
 import { CompactMenu, MenuSection } from "@/features/navigation/side-menu";
 import {
@@ -13,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SIDEBAR_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+const MESSAGES_PATH = "/mensajes";
 
 /**
  * Propósito: Marco de la app. Con sesión pinta un único menú lateral fijo a la izquierda
@@ -34,6 +36,7 @@ export function AppShell({
   const { t } = useI18n();
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
   const [menu, setMenu] = useState<SideMenuModel | null>(initialMenu);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     // Login/logout: el layout raíz se vuelve a pintar con el menú nuevo.
@@ -64,6 +67,32 @@ export function AppShell({
     return () => controller.abort();
   }, [pathname, initialMenu]);
 
+  useEffect(() => {
+    if (!initialMenu) {
+      return;
+    }
+    // Contador de mensajes sin leer: al navegar y cada 30 s con la pestaña visible.
+    const loadUnread = () => {
+      fetch("/api/conversations/unread-count", { cache: "no-store" })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((payload: { unread?: number } | null) => {
+          if (payload && typeof payload.unread === "number") setUnreadMessages(payload.unread);
+        })
+        .catch(() => {
+          // Sin red: se conserva el último valor.
+        });
+    };
+    loadUnread();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") loadUnread();
+    }, 30_000);
+    window.addEventListener(MESSAGES_READ_EVENT, loadUnread);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener(MESSAGES_READ_EVENT, loadUnread);
+    };
+  }, [pathname, initialMenu]);
+
   if (!menu) {
     /**
      * Output:
@@ -90,7 +119,13 @@ export function AppShell({
      */
   }
 
-  const allItems = menu.sections.flatMap((section) => section.items);
+  const sections = menu.sections.map((section) => ({
+    ...section,
+    items: section.items.map((item) =>
+      item.href === MESSAGES_PATH ? { ...item, badge: unreadMessages } : item,
+    ),
+  }));
+  const allItems = sections.flatMap((section) => section.items);
 
   /**
    * Output:
@@ -125,7 +160,7 @@ export function AppShell({
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-3 py-4">
-          {menu.sections.map((section) => (
+          {sections.map((section) => (
             <MenuSection
               key={section.title}
               title={section.title}

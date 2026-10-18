@@ -1,5 +1,8 @@
 "use client";
 
+import { ContactLinks } from "@/features/messaging/contact-links";
+import { OpenConversationButton } from "@/features/messaging/open-conversation-button";
+import { toWhatsappNumber } from "@/domain/messaging";
 import { EVENT_NEXT_STEP_KEYS } from "@/core/i18n/label-keys";
 import { useI18n } from "@/core/i18n/provider";
 import {
@@ -364,20 +367,29 @@ function RegistrationsSection({
                     {team.groupLabel ? <span className="ml-2 text-xs text-lime">{t("events.group", { group: team.groupLabel })}</span> : null}
                   </p>
                   {team.contact ? (
-                    <p className="text-xs text-mist">
-                      {t("events.regCaptain")}: {team.contact.fullName || team.contact.email} ·{" "}
-                      <a href={`mailto:${team.contact.email}`} className="hover:text-bone">
-                        {team.contact.email}
-                      </a>
-                      {team.contact.phone ? (
-                        <>
-                          {" · "}
-                          <a href={`tel:${team.contact.phone}`} className="hover:text-bone">
-                            {team.contact.phone}
-                          </a>
-                        </>
-                      ) : null}
-                    </p>
+                    <div className="mt-1 space-y-2">
+                      <p className="text-xs text-mist">
+                        {t("events.regCaptain")}: {team.contact.fullName || team.contact.email} · {team.contact.email}
+                        {team.contact.phone ? ` · ${team.contact.phone}` : ""}
+                      </p>
+                      <div className="flex flex-wrap items-start gap-2">
+                        <ContactLinks
+                          whatsapp={toWhatsappNumber(team.contact.phone)}
+                          email={team.contact.email}
+                          subject={t("messaging.eventSubject", { event: event.name })}
+                          message={t("messaging.eventTemplate", {
+                            name: (team.contact.fullName || "").split(" ")[0],
+                            team: team.teamName,
+                            event: event.name,
+                          })}
+                        />
+                        <OpenConversationButton
+                          subjectType="event_registration"
+                          subjectId={team.registrationId}
+                          label={t("messaging.writeInApp")}
+                        />
+                      </div>
+                    </div>
                   ) : null}
                   <p className="text-xs text-mist/70">
                     {t("events.regRegisteredAt")}: {new Date(team.createdAt).toLocaleDateString(intlLocale)}
