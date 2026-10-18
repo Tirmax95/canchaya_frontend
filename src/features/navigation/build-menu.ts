@@ -1,6 +1,7 @@
 import "server-only";
 import {
   TENANT_BILLING_PATH,
+  TENANT_NEWS_PATH,
   TENANT_TEAM_PATH,
   getAdminAccess,
   type AdminAccess,
@@ -156,6 +157,9 @@ export async function buildSideMenu(session: SessionUser, t: TranslateFn): Promi
     items: buildExploreItems(t, access.enabledModules),
   });
   const accountItems: SideMenuItem[] = [];
+  if (access.isTenantOwner && access.enabledModules.includes("news")) {
+    accountItems.push({ href: TENANT_NEWS_PATH, label: t("admin.news"), icon: "news" });
+  }
   if (access.isTenantOwner && access.enabledModules.includes("billing")) {
     accountItems.push({ href: TENANT_BILLING_PATH, label: t("admin.myBilling"), icon: "billing" });
   }

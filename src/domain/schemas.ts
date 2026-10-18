@@ -15,6 +15,7 @@ import {
 import { TENANT_MODULES } from "@/domain/tenant-modules";
 import { EVENT_FORMATS, EVENT_LIMITS, EVENT_SPORTS, isUploadedCoverPath } from "@/domain/events";
 import { CONVERSATION_SUBJECT_TYPES, MAX_MESSAGE_LENGTH } from "@/domain/messaging";
+import { MAX_NEWS_BODY_LENGTH, MAX_NEWS_TITLE_LENGTH } from "@/domain/news";
 import { MAX_COMMISSION_BPS, MAX_MONTHLY_FEE, STATUS_REASON_MAX_LENGTH } from "@/domain/platform";
 import {
   getPasswordByteLength,
@@ -622,3 +623,32 @@ export const openConversationSchema = z.object({
 export const sendMessageSchema = z.object({
   body: z.string().trim().min(1, "Escribe un mensaje").max(MAX_MESSAGE_LENGTH),
 });
+
+const newsPostFieldsSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(3, "El título debe tener al menos 3 caracteres")
+    .max(MAX_NEWS_TITLE_LENGTH),
+  body: z.string().trim().min(1, "Escribe el contenido de la noticia").max(MAX_NEWS_BODY_LENGTH),
+  image_url: z
+    .union([
+      z.literal(""),
+      imageUrlSchema,
+      z.string().refine(isUploadedCoverPath, "La imagen no es válida"),
+    ])
+    .nullable(),
+  event_id: z.number().int().positive().max(2_147_483_647).nullable(),
+  published_at: isoDateSchema,
+});
+
+/** Crear noticia: tenant, título y cuerpo obligatorios; imagen, evento y fecha opcionales. */
+export const createNewsPostSchema = newsPostFieldsSchema
+  .partial({ image_url: true, event_id: true, published_at: true })
+  .extend({ organization_id: positiveIdSchema });
+
+/** Editar noticia: todo opcional; `null` quita la imagen o el evento. */
+export const updateNewsPostSchema = newsPostFieldsSchema.partial();
+
+export type CreateNewsPostInput = z.infer<typeof createNewsPostSchema>;
+export type UpdateNewsPostInput = z.infer<typeof updateNewsPostSchema>;

@@ -128,7 +128,7 @@ export function EventAdminPanel({ detail }: { detail: EventDetail }) {
         ]
       : []),
     ...(formatHasBracket(event.format)
-      ? [{ id: "bracket", label: t("events.tabBracket"), content: <BracketView matches={detail.matches} /> }]
+      ? [{ id: "bracket", label: t("events.tabBracket"), content: <BracketView detail={detail} /> }]
       : []),
   ];
 

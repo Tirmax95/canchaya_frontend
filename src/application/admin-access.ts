@@ -15,6 +15,7 @@ import { cache } from "react";
 export const NO_MODULES_PATH = "/admin/sin-modulos";
 export const TENANT_BILLING_PATH = "/admin/mi-facturacion";
 export const TENANT_TEAM_PATH = "/admin/equipo";
+export const TENANT_NEWS_PATH = "/admin/noticias";
 
 export interface SuspendedTenantNotice {
   organizationName: string;

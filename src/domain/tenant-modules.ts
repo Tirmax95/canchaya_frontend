@@ -9,6 +9,7 @@ export const TENANT_MODULES = [
   "fields",
   "reservations",
   "events",
+  "news",
   "messages",
   "matches",
   "challenges",
@@ -59,6 +60,12 @@ export const TENANT_MODULE_DEFINITIONS: Record<TenantModule, TenantModuleDefinit
     description: "Torneos, ligas y eventos abiertos con inscripción, fixture y resultados.",
     href: "/admin/eventos",
     section: "panel",
+  },
+  news: {
+    label: "Noticias",
+    description: "Anuncios de la sede que los jugadores ven en la app (solo el dueño).",
+    href: "/admin/noticias",
+    section: "account",
   },
   messages: {
     label: "Mensajes",

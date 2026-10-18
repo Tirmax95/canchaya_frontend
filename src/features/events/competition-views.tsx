@@ -3,14 +3,16 @@
 import { useI18n } from "@/core/i18n/provider";
 import type { TranslateFn } from "@/core/i18n/translate";
 import {
-  buildBracketColumns,
   formatScore,
   getKnockoutRoundKey,
   groupMatchesByRound,
   isMatchPlayed,
+  type EventDetail,
   type EventMatch,
   type StandingsTable,
 } from "@/domain/events";
+import { buildTreeFromMatches, projectGroupKnockout } from "@/domain/bracket";
+import { BracketTreeView } from "@/features/events/bracket-tree";
 import { formatEventDateTime } from "@/features/events/event-format";
 import { cn } from "@/shared/lib/cn";
 
@@ -260,98 +262,36 @@ export function StandingsView({
 }
 
 /**
- * Propósito: Cuadro de llaves por columnas (ronda) con ganador resaltado y tercer puesto.
+ * Propósito: Cuadro de eliminatorias como árbol. Con la llave creada muestra los cruces
+ * reales; en grupos + eliminatoria antes de cerrar los grupos, la proyección según la tabla.
  */
-export function BracketView({ matches }: { matches: EventMatch[] }) {
+export function BracketView({ detail }: { detail: EventDetail }) {
   const { t } = useI18n();
-  const columns = buildBracketColumns(matches);
-  const thirdPlace = matches.find((match) => match.stage === "knockout" && match.isThirdPlace);
-  const totalRounds = countKnockoutRounds(matches);
-  if (columns.length === 0) {
+  const hasKnockout = detail.matches.some((match) => match.stage === "knockout");
+  const tree = hasKnockout
+    ? buildTreeFromMatches(detail.matches, detail.champion?.teamName ?? null)
+    : detail.event.format === "groups_knockout"
+      ? projectGroupKnockout(detail.event.settings, detail.standings)
+      : null;
+  if (!tree || tree.totalRounds === 0) {
     /**
      * Output:
-     * @returns JSX.Element — Vacío
+     * @returns JSX.Element — Aún no hay cuadro
      */
-    return <p className="text-sm text-mist">{t("events.fixtureEmpty")}</p>;
+    return <p className="text-sm text-mist">{t("events.bracketPending")}</p>;
   }
   /**
    * Output:
-   * @returns JSX.Element — Llaves con scroll horizontal
+   * @returns JSX.Element — Árbol de eliminatorias (real o proyectado)
    */
   return (
-    <div className="space-y-6">
-      <div className="overflow-x-auto pb-2">
-        <div className="flex min-w-max gap-6">
-          {columns.map((column) => (
-            <div key={column[0].round} className="flex w-60 flex-col">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-lime">
-                {getRoundTitle(t, column[0], totalRounds)}
-              </h3>
-              <div className="flex flex-1 flex-col justify-around gap-4">
-                {column.map((match) => (
-                  <BracketMatch key={match.matchId} match={match} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {thirdPlace ? (
-        <div className="w-60">
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-lime">
-            {t("events.thirdPlaceMatch")}
-          </h3>
-          <BracketMatch match={thirdPlace} />
-        </div>
+    <div className="space-y-4">
+      {tree.isProjection ? (
+        <p className="rounded-2xl border border-lime/20 bg-lime/5 px-4 py-3 text-xs leading-5 text-mist">
+          {t("events.bracketProjectionNote")}
+        </p>
       ) : null}
-    </div>
-  );
-}
-
-/**
- * Propósito: Caja de un partido en el cuadro.
- */
-function BracketMatch({ match }: { match: EventMatch }) {
-  const { t } = useI18n();
-  const sides = [
-    {
-      key: "home",
-      name: match.homeTeamName,
-      score: match.homeScore,
-      penalties: match.homePenalties,
-      isWinner: match.winnerRegistrationId !== null && match.winnerRegistrationId === match.homeRegistrationId,
-    },
-    {
-      key: "away",
-      name: match.awayTeamName,
-      score: match.awayScore,
-      penalties: match.awayPenalties,
-      isWinner: match.winnerRegistrationId !== null && match.winnerRegistrationId === match.awayRegistrationId,
-    },
-  ];
-  /**
-   * Output:
-   * @returns JSX.Element — Dos filas (local y visitante)
-   */
-  return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-ink/40">
-      {sides.map((side) => (
-        <div
-          key={side.key}
-          className={cn(
-            "flex items-center justify-between gap-2 border-white/5 px-3 py-2 text-sm first:border-b",
-            side.isWinner ? "bg-lime/10 font-semibold text-bone" : "text-mist",
-          )}
-        >
-          <span className="truncate">{side.name ?? t("events.toBeDefined")}</span>
-          <span className="shrink-0 tabular-nums">
-            {isMatchPlayed(match) ? side.score : ""}
-            {isMatchPlayed(match) && side.penalties !== null ? (
-              <span className="ml-1 text-[10px] text-mist">({side.penalties})</span>
-            ) : null}
-          </span>
-        </div>
-      ))}
+      <BracketTreeView tree={tree} />
     </div>
   );
 }
