@@ -1,8 +1,8 @@
-import { isSafeHttpUrl } from "@/shared/lib/url";
+import { isSafeImageSrc } from "@/shared/lib/url";
 import { cn } from "@/shared/lib/cn";
 
 /**
- * Propósito: Renderiza imágenes remotas solo si la URL es http(s).
+ * Propósito: Renderiza imágenes solo si la URL es http(s) o una portada propia (/uploads).
  * Evita XSS por javascript: y no rompe si el backend no tiene imagen.
  */
 export function SafeImage({
@@ -16,7 +16,7 @@ export function SafeImage({
   className?: string;
   fallbackLabel: string;
 }) {
-  if (isSafeHttpUrl(src)) {
+  if (isSafeImageSrc(src)) {
     /**
      * Output:
      * @returns JSX.Element — img remota validada

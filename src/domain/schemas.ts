@@ -13,7 +13,7 @@ import {
   validateOpeningHours,
 } from "@/domain/establishment";
 import { TENANT_MODULES } from "@/domain/tenant-modules";
-import { EVENT_FORMATS, EVENT_LIMITS, EVENT_SPORTS } from "@/domain/events";
+import { EVENT_FORMATS, EVENT_LIMITS, EVENT_SPORTS, isUploadedCoverPath } from "@/domain/events";
 import { MAX_COMMISSION_BPS, MAX_MONTHLY_FEE, STATUS_REASON_MAX_LENGTH } from "@/domain/platform";
 import {
   getPasswordByteLength,
@@ -518,7 +518,11 @@ export const eventInputSchema = z
     settings: eventSettingsSchema,
     prizes: z.string().trim().max(2000),
     rules: z.string().trim().max(4000),
-    cover_image: z.union([z.literal(""), imageUrlSchema]),
+    cover_image: z.union([
+      z.literal(""),
+      imageUrlSchema,
+      z.string().refine(isUploadedCoverPath, "La portada no es válida"),
+    ]),
   })
   .partial();
 
@@ -601,3 +605,10 @@ export const eventListQuerySchema = z.object({
   include_past: z.enum(["true", "false"]).optional(),
 });
 export type EventListQuery = z.infer<typeof eventListQuerySchema>;
+
+export const generateEventCoverSchema = z.object({
+  establishmentId: positiveIdSchema,
+  name: z.string().trim().min(3, "Escribe el nombre del evento").max(120),
+  sport: z.enum(EVENT_SPORTS),
+  format: z.enum(EVENT_FORMATS),
+});

@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Portadas subidas o generadas: el backend las guarda y este origen las sirve, así la
+  // CSP (img-src 'self') las permite sin abrir http:// del backend.
+  async rewrites() {
+    const backendUrl = (process.env.BACKEND_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    return [{ source: "/uploads/events/:fileName", destination: `${backendUrl}/uploads/events/:fileName` }];
+  },
 };
 
 export default nextConfig;

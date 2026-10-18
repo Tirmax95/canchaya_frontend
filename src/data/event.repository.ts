@@ -310,3 +310,59 @@ export async function verifyRegistrationPayment(
    */
   return sanitizeIntent(payload.intent);
 }
+
+export interface EventCoverResult {
+  coverImage: string;
+  isSimulated: boolean;
+}
+
+/** Generar con IA puede tardar hasta ~1,5 min con un proveedor real. */
+const COVER_GENERATION_TIMEOUT_MS = 100_000;
+const COVER_UPLOAD_TIMEOUT_MS = 30_000;
+
+/**
+ * Propósito: Pide al backend una portada generada con los datos del evento.
+ */
+export async function generateEventCover(input: {
+  establishmentId: number;
+  name: string;
+  sport: string;
+  format: string;
+}): Promise<EventCoverResult> {
+  const payload = await requestAuthedBackend<{ cover_image: string; is_simulated?: boolean }>({
+    path: "/events/cover/generate",
+    method: "POST",
+    body: {
+      establishment_id: input.establishmentId,
+      name: input.name,
+      sport: input.sport,
+      format: input.format,
+    },
+    timeoutMs: COVER_GENERATION_TIMEOUT_MS,
+  });
+  /**
+   * Output:
+   * @returns EventCoverResult — Ruta de la portada y si fue simulada
+   */
+  return { coverImage: payload.cover_image, isSimulated: payload.is_simulated === true };
+}
+
+/**
+ * Propósito: Sube una portada al backend (multipart).
+ */
+export async function uploadEventCover(establishmentId: number, file: File): Promise<EventCoverResult> {
+  const formData = new FormData();
+  formData.set("establishment_id", String(establishmentId));
+  formData.set("file", file, file.name);
+  const payload = await requestAuthedBackend<{ cover_image: string }>({
+    path: "/events/cover/upload",
+    method: "POST",
+    body: formData,
+    timeoutMs: COVER_UPLOAD_TIMEOUT_MS,
+  });
+  /**
+   * Output:
+   * @returns EventCoverResult — Ruta de la portada subida
+   */
+  return { coverImage: payload.cover_image, isSimulated: false };
+}

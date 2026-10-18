@@ -13,6 +13,8 @@ export interface BackendRequest {
   body?: unknown;
   signal?: AbortSignal;
   sessionId?: string;
+  /** Plazo propio (p. ej. generar una imagen con IA tarda más que una consulta). */
+  timeoutMs?: number;
 }
 
 export interface BackendFile {
@@ -80,7 +82,11 @@ async function fetchBackend<T>(
   const method = request.method ?? "GET";
   const requestId = crypto.randomUUID();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    request.timeoutMs ?? REQUEST_TIMEOUT_MS,
+  );
+  const isMultipart = request.body instanceof FormData;
 
   if (request.signal) {
     request.signal.addEventListener("abort", () => controller.abort(), {
@@ -94,7 +100,7 @@ async function fetchBackend<T>(
       headers: {
         Accept: accept,
         "X-Request-Id": requestId,
-        ...(request.body !== undefined
+        ...(request.body !== undefined && !isMultipart
           ? { "Content-Type": "application/json" }
           : {}),
         ...(request.sessionId ? { "X-Session-Id": request.sessionId } : {}),
@@ -102,7 +108,11 @@ async function fetchBackend<T>(
           ? { "X-Client-Ip": clientIp, "X-Bff-Secret": bffSharedSecret }
           : {}),
       },
-      body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
+      body: isMultipart
+        ? (request.body as FormData)
+        : request.body !== undefined
+          ? JSON.stringify(request.body)
+          : undefined,
       cache: "no-store",
       signal: controller.signal,
     });

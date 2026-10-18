@@ -17,13 +17,13 @@ import {
   type EventSummary,
 } from "@/domain/events";
 import { cn } from "@/shared/lib/cn";
-import { isSafeHttpUrl } from "@/shared/lib/url";
+import { isSafeImageSrc } from "@/shared/lib/url";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { TextAreaField, TextField } from "@/shared/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface FormValues {
   establishmentId: number | null;
@@ -108,9 +108,78 @@ export function EventForm({
   const [values, setValues] = useState<FormValues>(() => toFormValues(event, venues));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [coverAction, setCoverAction] = useState<"upload" | "generate" | null>(null);
+  const [coverNotice, setCoverNotice] = useState<{ tone: "info" | "danger"; text: string } | null>(
+    null,
+  );
+  const coverFileInput = useRef<HTMLInputElement>(null);
   const isLocked =
     Boolean(event?.fixtureGeneratedAt) ||
     (event !== undefined && !["draft", "registration_open", "registration_closed"].includes(event.status));
+
+  /**
+   * Propósito: Pide la portada al BFF (subida o generada) y la precarga en el formulario.
+   * Se guarda en el evento recién al pulsar "Guardar cambios".
+   */
+  async function requestCover(action: "upload" | "generate", file?: File) {
+    if (!values.establishmentId) {
+      setCoverNotice({ tone: "danger", text: t("events.coverNeedsVenue") });
+      return;
+    }
+    if (action === "generate" && values.name.trim().length < 3) {
+      setCoverNotice({ tone: "danger", text: t("events.coverNeedsName") });
+      return;
+    }
+    setCoverAction(action);
+    setCoverNotice(null);
+    try {
+      let response: Response;
+      if (action === "upload" && file) {
+        const formData = new FormData();
+        formData.set("establishmentId", String(values.establishmentId));
+        formData.set("file", file);
+        response = await fetch("/api/events/cover/upload", { method: "POST", body: formData });
+      } else {
+        response = await fetch("/api/events/cover/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            establishmentId: values.establishmentId,
+            name: values.name.trim(),
+            sport: values.sport,
+            format: values.format,
+          }),
+        });
+      }
+      const payload = (await response.json().catch(() => ({}))) as {
+        coverImage?: string;
+        isSimulated?: boolean;
+        message?: string;
+      };
+      if (!response.ok || !payload.coverImage) {
+        setCoverNotice({ tone: "danger", text: payload.message ?? t("events.coverFailed") });
+        return;
+      }
+      setField("coverImage", payload.coverImage);
+      setCoverNotice({
+        tone: "info",
+        text:
+          action === "upload"
+            ? t("events.coverUploaded")
+            : payload.isSimulated
+              ? t("events.coverGeneratedSimulated")
+              : t("events.coverGenerated"),
+      });
+    } catch {
+      setCoverNotice({ tone: "danger", text: t("events.coverFailed") });
+    } finally {
+      setCoverAction(null);
+    }
+    /**
+     * Output:
+     * Side effects — Campo de portada precargado o aviso de error
+     */
+  }
 
   /**
    * Propósito: Cambia un campo.
@@ -423,21 +492,72 @@ export function EventForm({
           value={values.rules}
           onChange={(changeEvent) => setField("rules", changeEvent.target.value)}
         />
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-end">
-          <TextField
-            label={t("events.formCover")}
-            type="url"
-            maxLength={500}
-            placeholder="https://..."
-            value={values.coverImage}
-            onChange={(changeEvent) => setField("coverImage", changeEvent.target.value)}
-          />
-          {isSafeHttpUrl(values.coverImage) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={values.coverImage} alt="" referrerPolicy="no-referrer" className="h-28 w-full rounded-2xl border border-white/10 object-cover" />
-          ) : (
-            <div className="h-28 w-full rounded-2xl border border-dashed border-white/15 bg-ink/30" />
-          )}
+        <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-end">
+            <TextField
+              label={t("events.formCover")}
+              hint={t("events.formCoverHint")}
+              maxLength={500}
+              placeholder="https://..."
+              value={values.coverImage}
+              onChange={(changeEvent) => setField("coverImage", changeEvent.target.value)}
+            />
+            {isSafeImageSrc(values.coverImage) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={values.coverImage}
+                alt={t("events.coverPreviewAlt")}
+                referrerPolicy="no-referrer"
+                className="h-28 w-full rounded-2xl border border-white/10 object-cover"
+              />
+            ) : (
+              <div className="grid h-28 w-full place-items-center rounded-2xl border border-dashed border-white/15 bg-ink/30 text-xs text-mist/60">
+                {coverAction ? t("events.coverWorking") : t("events.coverEmpty")}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={coverFileInput}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden
+              onChange={(changeEvent) => {
+                const file = changeEvent.target.files?.[0];
+                changeEvent.target.value = "";
+                if (file) void requestCover("upload", file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="px-4 py-2 text-[13px]"
+              isLoading={coverAction === "upload"}
+              disabled={coverAction !== null}
+              onClick={() => coverFileInput.current?.click()}
+            >
+              <svg aria-hidden viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13V3m0 0L6 7m4-4 4 4M3 13v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+              </svg>
+              {t("events.coverUpload")}
+            </Button>
+            <Button
+              type="button"
+              className="px-4 py-2 text-[13px]"
+              isLoading={coverAction === "generate"}
+              disabled={coverAction !== null}
+              onClick={() => void requestCover("generate")}
+            >
+              <svg aria-hidden viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
+                <path d="M10 1.5l1.6 4.4 4.4 1.6-4.4 1.6L10 13.5 8.4 9.1 4 7.5l4.4-1.6L10 1.5Zm5.5 10 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z" />
+              </svg>
+              {coverAction === "generate" ? t("events.coverGenerating") : t("events.coverGenerate")}
+            </Button>
+            <span className="text-xs text-mist/70">{t("events.coverUploadHint")}</span>
+          </div>
+          {coverNotice ? <Alert tone={coverNotice.tone}>{coverNotice.text}</Alert> : null}
         </div>
       </Section>
 

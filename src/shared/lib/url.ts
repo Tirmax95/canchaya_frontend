@@ -1,3 +1,5 @@
+import { isUploadedCoverPath } from "@/domain/events";
+
 /**
  * Propósito: Valida que una URL de imagen sea http(s) absoluta. Evita javascript: y data:.
  */
@@ -61,4 +63,15 @@ export function toSafeInternalPath(value: string | string[] | undefined | null):
    * @returns string — Ruta interna normalizada
    */
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/**
+ * Propósito: True si la imagen es http(s) o una portada subida/generada en CanchaYa.
+ */
+export function isSafeImageSrc(value: string | undefined | null): boolean {
+  /**
+   * Output:
+   * @returns boolean — Imagen segura para pintar
+   */
+  return isSafeHttpUrl(value) || (typeof value === "string" && isUploadedCoverPath(value));
 }

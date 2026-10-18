@@ -393,3 +393,21 @@ export function getNextLifecycleAction(
           ? "complete"
           : null;
 }
+
+/** Portada guardada por el backend y servida por este mismo origen (`/uploads/...`). */
+const UPLOADED_COVER_PATTERN =
+  /^\/uploads\/events\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp|svg)$/;
+
+/**
+ * Propósito: True si la ruta es una portada subida o generada en CanchaYa.
+ */
+export function isUploadedCoverPath(value: string): boolean {
+  /**
+   * Output:
+   * @returns boolean — Coincide con `/uploads/events/<uuid>.<ext>`
+   */
+  return UPLOADED_COVER_PATTERN.test(value);
+}
+
+export const MAX_COVER_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const COVER_UPLOAD_TYPES: readonly string[] = ["image/png", "image/jpeg", "image/webp"];

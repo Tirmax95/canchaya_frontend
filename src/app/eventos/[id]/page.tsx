@@ -10,7 +10,7 @@ import { EventStatusBadge, RegistrationStatusBadge } from "@/features/events/eve
 import { formatEventDates, formatEventDateTime } from "@/features/events/event-format";
 import { EventRegistrationPanel, EventTabs } from "@/features/events/event-registration-panel";
 import { VenueMap } from "@/features/maps/venue-map";
-import { isSafeHttpUrl } from "@/shared/lib/url";
+import { isSafeImageSrc } from "@/shared/lib/url";
 import { Alert } from "@/shared/ui/alert";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -207,7 +207,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         <div
           className="h-56 bg-cover bg-center sm:h-72"
           style={{
-            backgroundImage: isSafeHttpUrl(event.coverImage)
+            backgroundImage: isSafeImageSrc(event.coverImage)
               ? `url(${JSON.stringify(event.coverImage)})`
               : undefined,
             backgroundColor: "#102218",
