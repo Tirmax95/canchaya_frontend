@@ -1,7 +1,7 @@
 export const ERROR_LOG_LEVELS = ["warn", "error", "fatal"] as const;
 export type ErrorLogLevel = (typeof ERROR_LOG_LEVELS)[number];
 
-export const ERROR_LOG_SOURCES = ["backend", "frontend", "bff"] as const;
+export const ERROR_LOG_SOURCES = ["backend", "frontend", "bff", "mobile"] as const;
 export type ErrorLogSource = (typeof ERROR_LOG_SOURCES)[number];
 
 export interface SystemErrorLogEntry {
@@ -43,4 +43,5 @@ export const ERROR_LOG_SOURCE_LABELS: Record<ErrorLogSource, string> = {
   backend: "API",
   frontend: "Navegador",
   bff: "Web (BFF)",
+  mobile: "App móvil",
 };

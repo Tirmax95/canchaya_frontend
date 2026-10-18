@@ -1605,6 +1605,7 @@ export const esMessages = {
     sourceBackend: "API",
     sourceFrontend: "Navegador",
     sourceBff: "Web (BFF)",
+    sourceMobile: "App móvil",
     courtInPlay: "En juego",
     courtAwaiting: "Por confirmar",
     courtStartingSoon: "Arranca pronto",
