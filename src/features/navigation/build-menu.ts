@@ -9,8 +9,12 @@ import { isStaff } from "@/core/auth/roles";
 import type { SessionUser } from "@/domain/user";
 import { translateTenantModuleLabel } from "@/core/i18n/label-keys";
 import type { TranslateFn } from "@/core/i18n/translate";
-import { TENANT_MODULE_DEFINITIONS } from "@/domain/tenant-modules";
-import type { SideMenuItem } from "@/features/navigation/side-menu";
+import {
+  TENANT_MODULE_DEFINITIONS,
+  modulesInSection,
+  type TenantModule,
+} from "@/domain/tenant-modules";
+import type { SideMenuIcon, SideMenuItem } from "@/features/navigation/side-menu";
 
 export interface SideMenuSection {
   title: string;
@@ -23,15 +27,27 @@ export interface SideMenuModel {
   sections: SideMenuSection[];
 }
 
+/** Enlace público de Explorar que repite un módulo del panel; con el módulo activo se oculta. */
+const EXPLORE_ITEMS_COVERED_BY_MODULE: Partial<Record<string, TenantModule>> = {
+  "/eventos": "events",
+  "/establecimientos": "establishments",
+  "/reservas": "reservations",
+};
+
+/** Partidos, retos y equipos: el super admin los habilita por tenant para su staff. */
+const EXPLORE_MODULE_BY_HREF: Partial<Record<string, TenantModule>> = {
+  "/partidos": "matches",
+  "/retos": "challenges",
+  "/equipos": "teams",
+};
+
 /**
- * Propósito: Enlaces generales de la app, iguales para cualquier rol con sesión.
+ * Propósito: Enlaces generales de la app. Un jugador los ve todos. Para el staff
+ * (`enabledModules` definido) Partidos/Retos/Equipos dependen de sus módulos, y Sedes,
+ * Reservas y Eventos se ocultan si ya los tiene como módulo del panel: cada sección una vez.
  */
-function buildExploreItems(t: TranslateFn): SideMenuItem[] {
-  /**
-   * Output:
-   * @returns SideMenuItem[] — Partidos, retos, equipos, sedes y reservas
-   */
-  return [
+function buildExploreItems(t: TranslateFn, enabledModules?: readonly TenantModule[]): SideMenuItem[] {
+  const items: SideMenuItem[] = [
     { href: "/partidos", label: t("nav.matches"), icon: "matches" },
     { href: "/retos", label: t("nav.challenges"), icon: "challenges" },
     { href: "/equipos", label: t("nav.teams"), icon: "teams" },
@@ -39,6 +55,25 @@ function buildExploreItems(t: TranslateFn): SideMenuItem[] {
     { href: "/establecimientos", label: t("nav.venues"), icon: "venues" },
     { href: "/reservas", label: t("nav.bookings"), icon: "bookings" },
   ];
+  if (!enabledModules) {
+    /**
+     * Output:
+     * @returns SideMenuItem[] — Jugador: todos los enlaces
+     */
+    return items;
+  }
+  /**
+   * Output:
+   * @returns SideMenuItem[] — Staff: solo módulos habilitados y sin duplicar el panel
+   */
+  return items.filter((item) => {
+    const requiredModule = EXPLORE_MODULE_BY_HREF[item.href];
+    if (requiredModule) {
+      return enabledModules.includes(requiredModule);
+    }
+    const coveringModule = EXPLORE_ITEMS_COVERED_BY_MODULE[item.href];
+    return !coveringModule || !enabledModules.includes(coveringModule);
+  });
 }
 
 /**
@@ -87,12 +122,12 @@ async function loadStaffAccess(): Promise<AdminAccess | null> {
  * el super admin habilitó para el tenant; cada página y el backend vuelven a validar el acceso.
  */
 export async function buildSideMenu(session: SessionUser, t: TranslateFn): Promise<SideMenuModel> {
-  const exploreSection: SideMenuSection = { title: t("nav.explore"), items: buildExploreItems(t) };
   const profileItem: SideMenuItem = { href: "/perfil", label: t("nav.profile"), icon: "profile" };
   const userLabel = session.fullName ?? session.email;
   const access = isStaff(session) ? await loadStaffAccess() : null;
 
   if (!access) {
+    const exploreSection: SideMenuSection = { title: t("nav.explore"), items: buildExploreItems(t) };
     /**
      * Output:
      * @returns SideMenuModel — Jugador (o staff sin acceso resuelto)
@@ -104,23 +139,29 @@ export async function buildSideMenu(session: SessionUser, t: TranslateFn): Promi
     };
   }
 
-  const moduleItems: SideMenuItem[] = access.enabledModules.map((tenantModule) => ({
-    href: TENANT_MODULE_DEFINITIONS[tenantModule].href,
-    label: translateTenantModuleLabel(t, tenantModule),
-    icon: tenantModule,
-  }));
+  const moduleItems: SideMenuItem[] = modulesInSection(access.enabledModules, "panel").map(
+    (tenantModule) => ({
+      href: TENANT_MODULE_DEFINITIONS[tenantModule].href,
+      label: translateTenantModuleLabel(t, tenantModule),
+      icon: tenantModule as SideMenuIcon,
+    }),
+  );
   const sections: SideMenuSection[] = [{ title: t("admin.modules"), items: moduleItems }];
   if (access.isSuperAdmin) {
     sections.push({ title: t("admin.platform"), items: buildSuperAdminItems(t) });
   }
-  sections.push(exploreSection);
-  const accountItems: SideMenuItem[] = access.isTenantOwner
-    ? [
-        { href: TENANT_BILLING_PATH, label: t("admin.myBilling"), icon: "billing" },
-        { href: TENANT_TEAM_PATH, label: t("admin.team"), icon: "team" },
-        profileItem,
-      ]
-    : [profileItem];
+  sections.push({
+    title: t("nav.explore"),
+    items: buildExploreItems(t, access.enabledModules),
+  });
+  const accountItems: SideMenuItem[] = [];
+  if (access.isTenantOwner && access.enabledModules.includes("billing")) {
+    accountItems.push({ href: TENANT_BILLING_PATH, label: t("admin.myBilling"), icon: "billing" });
+  }
+  if (access.isTenantOwner && access.enabledModules.includes("staff")) {
+    accountItems.push({ href: TENANT_TEAM_PATH, label: t("admin.team"), icon: "team" });
+  }
+  accountItems.push(profileItem);
   sections.push({ title: t("admin.account"), items: accountItems });
 
   /**

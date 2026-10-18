@@ -10,7 +10,7 @@ import {
 } from "@/features/navigation/sidebar-preference";
 import { cn } from "@/shared/lib/cn";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const SIDEBAR_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
@@ -20,7 +20,7 @@ const SIDEBAR_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
  * preferencia queda en una cookie para que el servidor la pinte igual sin parpadeo.
  */
 export function AppShell({
-  menu,
+  menu: initialMenu,
   initialCollapsed,
   footer,
   children,
@@ -33,6 +33,36 @@ export function AppShell({
   const pathname = usePathname();
   const { t } = useI18n();
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
+  const [menu, setMenu] = useState<SideMenuModel | null>(initialMenu);
+
+  useEffect(() => {
+    // Login/logout: el layout raíz se vuelve a pintar con el menú nuevo.
+    setMenu(initialMenu);
+  }, [initialMenu]);
+
+  useEffect(() => {
+    if (!initialMenu) {
+      /**
+       * Output:
+       * Side effects — Sin sesión no hay menú que refrescar
+       */
+      return;
+    }
+    // El layout raíz se conserva entre navegaciones: se pide el menú fresco en cada ruta
+    // para que los módulos que cambie el super admin se reflejen sin recargar.
+    const controller = new AbortController();
+    fetch("/api/navigation/menu", { cache: "no-store", signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { menu?: SideMenuModel | null } | null) => {
+        if (payload && payload.menu) {
+          setMenu(payload.menu);
+        }
+      })
+      .catch(() => {
+        // Sin red o navegación cancelada: se conserva el menú actual.
+      });
+    return () => controller.abort();
+  }, [pathname, initialMenu]);
 
   if (!menu) {
     /**

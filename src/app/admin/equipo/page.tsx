@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * Propósito: El dueño gestiona quién más administra cada uno de sus tenants.
  */
 export default async function TeamPage() {
-  const [{ t }, access] = await Promise.all([getTranslator(), requireTenantOwnerAccess()]);
+  const [{ t }, access] = await Promise.all([getTranslator(), requireTenantOwnerAccess("staff")]);
   const teams = await Promise.all(
     access.ownedTenants.map(async (tenant) => ({ tenant, team: await getTeam(tenant.organizationId) })),
   );

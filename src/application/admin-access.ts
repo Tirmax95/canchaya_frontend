@@ -1,11 +1,12 @@
 import "server-only";
-import { isAdmin } from "@/core/auth/roles";
-import { requireSession } from "@/core/auth/session";
+import { isAdmin, isStaff } from "@/core/auth/roles";
+import { getSession, requireSession } from "@/core/auth/session";
 import { getMyTenantModuleAccess } from "@/data/organization.repository";
 import {
   TENANT_MODULE_DEFINITIONS,
   TENANT_MODULES,
   mergeTenantModules,
+  modulesInSection,
   type TenantModule,
 } from "@/domain/tenant-modules";
 import { redirect } from "next/navigation";
@@ -102,7 +103,7 @@ export const getAdminAccess = cache(async (): Promise<AdminAccess> => {
 export async function requireAdminModule(requiredModule: TenantModule): Promise<AdminAccess> {
   const access = await getAdminAccess();
   if (!access.enabledModules.includes(requiredModule)) {
-    const fallbackModule = access.enabledModules[0];
+    const fallbackModule = modulesInSection(access.enabledModules, "panel")[0];
     /**
      * Output:
      * @throws NEXT_REDIRECT — Al primer módulo habilitado o a la pantalla sin módulos
@@ -139,12 +140,14 @@ export async function requireSuperAdminAccess(): Promise<AdminAccess> {
 /**
  * Propósito: Guard de la facturación propia: solo dueños de tenant.
  */
-export async function requireTenantOwnerAccess(): Promise<AdminAccess> {
+export async function requireTenantOwnerAccess(
+  requiredModule?: TenantModule,
+): Promise<AdminAccess> {
   const access = await getAdminAccess();
-  if (!access.isTenantOwner) {
+  if (!access.isTenantOwner || (requiredModule && !access.enabledModules.includes(requiredModule))) {
     /**
      * Output:
-     * @throws NEXT_REDIRECT — Managers y super admin no tienen facturación propia
+     * @throws NEXT_REDIRECT — Managers/super admin, o módulo de cuenta deshabilitado
      */
     redirect("/admin");
   }
@@ -153,4 +156,32 @@ export async function requireTenantOwnerAccess(): Promise<AdminAccess> {
    * @returns AdminAccess — Dueño de tenant
    */
   return access;
+}
+
+/**
+ * Propósito: Guard de Partidos/Retos/Equipos. Un jugador siempre entra; el staff solo si el
+ * super admin habilitó ese módulo para su tenant (el menú ya lo oculta, esto cubre la URL).
+ */
+export async function guardStaffExploreModule(requiredModule: TenantModule): Promise<void> {
+  const session = await getSession();
+  if (!session || !isStaff(session)) {
+    /**
+     * Output:
+     * Side effects — Visitante o jugador: sin restricción
+     */
+    return;
+  }
+  const access = await getAdminAccess().catch(() => null);
+  if (access && !access.enabledModules.includes(requiredModule)) {
+    const fallbackModule = modulesInSection(access.enabledModules, "panel")[0];
+    /**
+     * Output:
+     * @throws NEXT_REDIRECT — Al primer módulo del panel o a la pantalla sin módulos
+     */
+    redirect(fallbackModule ? TENANT_MODULE_DEFINITIONS[fallbackModule].href : NO_MODULES_PATH);
+  }
+  /**
+   * Output:
+   * Side effects — Módulo habilitado: continúa
+   */
 }

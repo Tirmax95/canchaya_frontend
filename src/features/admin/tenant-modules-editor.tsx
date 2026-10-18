@@ -5,8 +5,10 @@ import { translateTenantModuleLabel } from "@/core/i18n/label-keys";
 import type { MessageKey } from "@/core/i18n/messages";
 import {
   TENANT_MODULES,
+  TENANT_MODULE_DEFINITIONS,
   normalizeTenantModules,
   type TenantModule,
+  type TenantModuleSection,
 } from "@/domain/tenant-modules";
 
 const TENANT_MODULE_HINT_KEYS: Record<TenantModule, MessageKey> = {
@@ -15,7 +17,20 @@ const TENANT_MODULE_HINT_KEYS: Record<TenantModule, MessageKey> = {
   fields: "admin.moduleCourtsHint",
   reservations: "admin.moduleReservationsHint",
   events: "admin.moduleEventsHint",
+  matches: "admin.moduleMatchesHint",
+  challenges: "admin.moduleChallengesHint",
+  teams: "admin.moduleTeamsHint",
+  billing: "admin.moduleBillingHint",
+  staff: "admin.moduleStaffHint",
 };
+
+const SECTION_TITLE_KEYS: Record<TenantModuleSection, MessageKey> = {
+  panel: "admin.modulesSectionPanel",
+  explore: "admin.modulesSectionExplore",
+  account: "admin.modulesSectionAccount",
+};
+
+const MENU_SECTIONS: TenantModuleSection[] = ["panel", "explore", "account"];
 import { usePlatformMutation } from "@/features/admin/platform/use-platform-mutation";
 import { cn } from "@/shared/lib/cn";
 import { Alert } from "@/shared/ui/alert";
@@ -81,49 +96,58 @@ export function TenantModulesForm({
   return (
     <div className="space-y-3">
       {errorMessage ? <Alert>{errorMessage}</Alert> : null}
-      <div className="grid gap-2 sm:grid-cols-2">
-        {TENANT_MODULES.map((tenantModule) => {
-          const isEnabled = draftModules.includes(tenantModule);
-          return (
-            <button
-              key={tenantModule}
-              type="button"
-              role="switch"
-              aria-checked={isEnabled}
-              onClick={() => toggleModule(tenantModule)}
-              className={cn(
-                "flex items-start gap-3 rounded-2xl border p-3 text-left transition",
-                isEnabled
-                  ? "border-lime/40 bg-lime/8"
-                  : "border-white/10 bg-white/3 opacity-70 hover:opacity-100",
-              )}
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  "mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition",
-                  isEnabled ? "bg-lime" : "bg-white/15",
-                )}
-              >
-                <span
+      {MENU_SECTIONS.map((section) => (
+        <div key={section} className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-mist">
+            {t(SECTION_TITLE_KEYS[section])}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {TENANT_MODULES.filter(
+              (tenantModule) => TENANT_MODULE_DEFINITIONS[tenantModule].section === section,
+            ).map((tenantModule) => {
+              const isEnabled = draftModules.includes(tenantModule);
+              return (
+                <button
+                  key={tenantModule}
+                  type="button"
+                  role="switch"
+                  aria-checked={isEnabled}
+                  onClick={() => toggleModule(tenantModule)}
                   className={cn(
-                    "size-4 rounded-full bg-ink transition-transform",
-                    isEnabled && "translate-x-4",
+                    "flex items-start gap-3 rounded-2xl border p-3 text-left transition",
+                    isEnabled
+                      ? "border-lime/40 bg-lime/8"
+                      : "border-white/10 bg-white/3 opacity-70 hover:opacity-100",
                   )}
-                />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-bone">
-                  {translateTenantModuleLabel(t, tenantModule)}
-                </span>
-                <span className="block text-xs leading-5 text-mist">
-                  {t(TENANT_MODULE_HINT_KEYS[tenantModule])}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition",
+                      isEnabled ? "bg-lime" : "bg-white/15",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "size-4 rounded-full bg-ink transition-transform",
+                        isEnabled && "translate-x-4",
+                      )}
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-bone">
+                      {translateTenantModuleLabel(t, tenantModule)}
+                    </span>
+                    <span className="block text-xs leading-5 text-mist">
+                      {t(TENANT_MODULE_HINT_KEYS[tenantModule])}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
       <div className="flex justify-end">
         <Button
           onClick={handleSave}

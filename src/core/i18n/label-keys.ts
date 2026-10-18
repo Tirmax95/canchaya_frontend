@@ -132,6 +132,11 @@ const TENANT_MODULE_LABEL_KEYS = {
   fields: "admin.moduleCourts",
   reservations: "admin.moduleReservations",
   events: "admin.moduleEvents",
+  matches: "admin.moduleMatches",
+  challenges: "admin.moduleChallenges",
+  teams: "admin.moduleTeams",
+  billing: "admin.moduleBilling",
+  staff: "admin.moduleStaff",
 } as const;
 
 /**

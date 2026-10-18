@@ -91,7 +91,7 @@ export default async function TenantBillingPage({
 }) {
   const [{ t, intlLocale }, access, { id: transactionId }] = await Promise.all([
     getTranslator(),
-    requireTenantOwnerAccess(),
+    requireTenantOwnerAccess("billing"),
     searchParams,
   ]);
   const consultLabel = t("common.consult");
