@@ -245,6 +245,22 @@ export async function disableTwoFactor(code: string, currentPassword: string): P
 }
 
 /**
+ * Propósito: Borra la cuenta del usuario en sesión. El backend la anonimiza, conserva
+ * reservas y pagos para las sedes y cierra todas sus sesiones.
+ */
+export async function deleteOwnAccount(currentPassword: string, code?: string): Promise<void> {
+  await requestAuthedBackend<AuthEnvelope>({
+    path: "/auth/account/delete",
+    method: "POST",
+    body: { currentPassword, code },
+  });
+  /**
+   * Output:
+   * Side effects — Cuenta anonimizada; la sesión actual deja de ser válida
+   */
+}
+
+/**
  * Propósito: Cierra la sesión remota. Ignora fallos de red en logout local.
  */
 export async function logoutRemote(sessionId: string): Promise<void> {

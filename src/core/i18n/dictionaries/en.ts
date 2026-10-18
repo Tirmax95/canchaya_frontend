@@ -67,6 +67,139 @@ export const enMessages = {
     venues: "Venues",
     courts: "Courts",
     book: "Book",
+    terms: "Terms",
+    privacy: "Privacy",
+    deleteAccount: "Delete account",
+  },
+  legal: {
+    draftBadge: "Draft",
+    draftNotice:
+      "Draft pending legal review. This text describes how CanchaYa works today, but it is not the final version yet and may change.",
+    lastUpdated: "Draft last updated: October 18, 2026",
+    pendingContact: "[contact email pending]",
+    relatedTitle: "Related documents",
+    terms: {
+      kicker: "Legal",
+      title: "Terms and conditions",
+      intro:
+        "These terms govern the use of CanchaYa, the website and app for finding sports venues, booking courts, building teams and joining matches and tournaments.",
+      s1Title: "1. Who we are",
+      s1Body:
+        "CanchaYa is a platform that connects players with sports venues. The legal name, address and contact details of the operator will be added in the reviewed version of this document. In the meantime you can write to us at {contact}.",
+      s2Title: "2. Your account",
+      s2Body1:
+        "You need an account with a valid email and a password to book. You are responsible for keeping it secret and for activity under your account. You can turn on two-step verification from Security.",
+      s2Body2:
+        "The details you give us must be accurate. You can correct them from your profile at any time.",
+      s3Title: "3. Bookings",
+      s3Body1:
+        "Each venue sets its own hours, prices, deposits and cancellation rules. CanchaYa shows those conditions before you confirm a booking.",
+      s3Body2:
+        "The court is provided by the venue. Complaints about the facilities or on-site service are the venue's responsibility, although we will help you route them.",
+      s4Title: "4. Payments",
+      s4Body:
+        "When a venue charges online, the payment is processed by a payment provider (for example Wompi). CanchaYa does not store your card details. Refunds depend on the venue's policy and the payment method.",
+      s5Title: "5. Teams, matches, tournaments and messages",
+      s5Body:
+        "You can create teams, join open matches, sign up for tournaments and message venues. Do not post illegal or offensive content or content you do not own, and do not use the platform to send spam.",
+      s6Title: "6. Acceptable use",
+      s6Body:
+        "Do not try to access other people's accounts, bypass security controls, automate bookings or disrupt the service. We may suspend accounts that break these terms.",
+      s7Title: "7. Deleting your account",
+      s7Body:
+        "You can delete your account at any time from the app (Profile → Security → Delete account) or from the Delete account page on this website. The Privacy policy explains which data is erased and which is kept anonymized.",
+      s8Title: "8. Liability",
+      s8Body:
+        "We do our best to keep the service available and accurate, but there may be outages or errors. To the extent permitted by law, CanchaYa is not liable for what happens at the venues' facilities.",
+      s9Title: "9. Changes to these terms",
+      s9Body:
+        "If we change these terms in a meaningful way we will notify you in the app or by email before they take effect.",
+      s10Title: "10. Governing law",
+      s10Body: "The governing law and jurisdiction will be defined in the legal review of this document.",
+    },
+    privacy: {
+      kicker: "Legal",
+      title: "Privacy policy",
+      intro:
+        "This page explains which personal data CanchaYa collects, what we use it for, who we share it with and how you can delete it.",
+      s1Title: "1. Controller",
+      s1Body:
+        "The data controller is CanchaYa. Full controller details will be added in the reviewed version. For any question about your data, write to us at {contact}.",
+      s2Title: "2. What we collect",
+      s2Account:
+        "Account: your email, your name and, optionally, your mobile number. Your password is stored only as a hash; nobody can read it.",
+      s2Bookings:
+        "Bookings and payments: the venue, court, date, booking status and amounts. Card details go straight to the payment provider; CanchaYa only stores the payment reference and status.",
+      s2Teams:
+        "Teams, matches and tournaments: the teams you create or join, open matches and event registrations.",
+      s2Messages: "Messages: the conversations you have with venues inside CanchaYa.",
+      s2Push:
+        "Notifications: if you allow them in the app, your device's push token. It is tied to your session and deleted when you sign out.",
+      s2Security: "Security: your active sessions and, if you turn it on, your two-step verification settings.",
+      s2Errors:
+        "Technical errors: when something fails we log technical data to fix it. App reports are sent without your session and with emails, phone numbers and tokens removed, so they contain no personal data.",
+      s2NoMore: "We do not sell your personal data.",
+      s3Title: "3. What we use it for",
+      s3Body:
+        "To create and protect your account, manage your bookings and payments, notify you about changes to your bookings and matches, let venues assist you and fix service errors.",
+      s4Title: "4. Who we share it with",
+      s4Body1:
+        "With the venue you book at or message: it sees your name, your contact details and the booking or conversation.",
+      s4Body2:
+        "With providers that serve us (hosting, email and push delivery, payment processing), only to run the service.",
+      s5Title: "5. How long we keep it",
+      s5Body:
+        "While your account is active. When you delete it, we erase your personal data as explained below. Bookings and payments are kept anonymized because they are part of the venues' books.",
+      s6Title: "6. How to delete your account",
+      s6Body1:
+        "In the app: Profile → Security → Delete account. On the web: the Delete account page. We will ask for your password and, if you use two-step verification, a code.",
+      s6Body2:
+        "Erased: your email, name, mobile number, password, two-step verification, sessions and push tokens, roles, conversations with venues, match preferences and pending invitations.",
+      s6Body3:
+        "Kept anonymized (without your name or contact details): past bookings, payments and registrations, for the venues' books.",
+      s6Body4:
+        "Before deleting it you must cancel your upcoming bookings and, if you are on a venue's staff, ask to be removed from it.",
+      s7Title: "7. Your rights",
+      s7Body:
+        "You can view and correct your data from your profile, delete your account at any time and write to us to request a copy of your data or object to a use. The applicable data protection law will be specified in the legal review.",
+      s8Title: "8. Security",
+      s8Body:
+        "We use encrypted connections, protected session cookies, hashed passwords and optional two-step verification. No system is infallible; if we detect an incident that affects you, we will let you know.",
+      s9Title: "9. Changes",
+      s9Body: "If we change this policy in a meaningful way we will notify you in the app or by email.",
+    },
+    deletion: {
+      kicker: "Account",
+      title: "Delete your account",
+      intro:
+        "You can delete your CanchaYa account and your personal data at any time. This cannot be undone.",
+      appTitle: "From the app",
+      appStep1: "Open CanchaYa and sign in.",
+      appStep2: "Go to Profile → Security.",
+      appStep3: "Tap Delete account and confirm with your password (and your code if you use two-step verification).",
+      whatTitle: "What happens to your data",
+      whatDeleted:
+        "Your email, name, mobile number, password, two-step verification, sessions, push tokens, roles, conversations with venues and preferences are erased.",
+      whatKept: "Past bookings, payments and registrations are kept anonymized for the venues' books.",
+      requirements:
+        "First you must cancel your upcoming bookings and, if you are on a venue's staff, ask to be removed from it.",
+      webTitle: "From the web",
+      signedOut: "Sign in to delete your account from here.",
+      signIn: "Sign in",
+      signedInAs: "You are about to delete the account {email}.",
+      readOnly: "You are in \"view as\" mode. Leave it to delete your own account.",
+      passwordLabel: "Your current password",
+      codeLabel: "Two-step verification code",
+      codeOptionalLabel: "Verification code (only if you use two-step verification)",
+      submit: "Delete my account",
+      confirmTitle: "Delete your account permanently?",
+      confirmDescription:
+        "We will sign you out everywhere and erase your personal data. You will not be able to recover it.",
+      confirmAction: "Yes, delete",
+      failed: "Could not delete the account",
+      done: "Your account has been deleted. Thanks for using CanchaYa.",
+      contact: "Can't sign in? Write to us at {contact} from the account's email address.",
+    },
   },
   errors: {
     title: "Something went off the pitch",

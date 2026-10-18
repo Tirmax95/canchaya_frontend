@@ -86,6 +86,23 @@ export const disableTwoFactorSchema = twoFactorCodeSchema.extend({
     .max(128),
 });
 
+/**
+ * Borrado de la propia cuenta: contraseña siempre; código solo si la cuenta tiene 2FA
+ * (vacío cuenta como ausente; el backend lo exige cuando corresponde).
+ */
+export const deleteAccountSchema = z.object({
+  currentPassword: z
+    .string({ error: "Escribe tu contraseña actual" })
+    .min(1, "Escribe tu contraseña actual")
+    .max(128),
+  code: z
+    .string()
+    .trim()
+    .max(16, "Código inválido")
+    .optional()
+    .transform((value) => (value ? value : undefined)),
+});
+
 export const invitationTokenSchema = z.object({ token: opaqueTokenSchema });
 
 export const inviteMemberSchema = z.object({
