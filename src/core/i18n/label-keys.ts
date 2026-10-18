@@ -92,6 +92,7 @@ export const ERROR_LOG_SOURCE_KEYS: Record<ErrorLogSource, MessageKey> = {
   backend: "labels.sourceBackend",
   frontend: "labels.sourceFrontend",
   bff: "labels.sourceBff",
+  mobile: "labels.sourceMobile",
 };
 
 export const COURT_STATUS_KEYS: Record<CourtLiveStatus, MessageKey> = {

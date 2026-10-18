@@ -1600,6 +1600,7 @@ export const enMessages = {
     sourceBackend: "API",
     sourceFrontend: "Browser",
     sourceBff: "Web (BFF)",
+    sourceMobile: "Mobile app",
     courtInPlay: "In play",
     courtAwaiting: "Awaiting confirm",
     courtStartingSoon: "Starting soon",
