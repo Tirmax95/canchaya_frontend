@@ -65,6 +65,142 @@ export const esMessages = {
     venues: "Sedes",
     courts: "Canchas",
     book: "Reservar",
+    terms: "Términos",
+    privacy: "Privacidad",
+    deleteAccount: "Eliminar cuenta",
+  },
+  legal: {
+    draftBadge: "Borrador",
+    draftNotice:
+      "Borrador pendiente de revisión legal. Este texto describe cómo funciona CanchaYa hoy, pero todavía no es la versión definitiva y puede cambiar.",
+    lastUpdated: "Última actualización del borrador: 18 de octubre de 2026",
+    pendingContact: "[correo de contacto pendiente]",
+    relatedTitle: "Documentos relacionados",
+    terms: {
+      kicker: "Legal",
+      title: "Términos y condiciones",
+      intro:
+        "Estos términos regulan el uso de CanchaYa, la web y la app para buscar sedes deportivas, reservar canchas, armar equipos y participar en partidos y torneos.",
+      s1Title: "1. Quiénes somos",
+      s1Body:
+        "CanchaYa es una plataforma que conecta a jugadores con sedes deportivas. La razón social, el domicilio y los datos de contacto del responsable se completarán en la versión revisada de este documento. Mientras tanto puedes escribirnos a {contact}.",
+      s2Title: "2. Tu cuenta",
+      s2Body1:
+        "Para reservar necesitas una cuenta con un correo válido y una contraseña. Eres responsable de mantenerla en secreto y de la actividad hecha con tu cuenta. Puedes activar la verificación en dos pasos desde Seguridad.",
+      s2Body2:
+        "Los datos que nos des deben ser verdaderos. Puedes corregirlos desde tu perfil en cualquier momento.",
+      s3Title: "3. Reservas",
+      s3Body1:
+        "Cada sede fija sus horarios, precios, anticipos y reglas de cancelación. CanchaYa muestra esas condiciones antes de que confirmes la reserva.",
+      s3Body2:
+        "La cancha la presta la sede. Cualquier reclamo sobre el estado de las instalaciones o el servicio en el lugar corresponde a la sede, aunque te ayudaremos a canalizarlo.",
+      s4Title: "4. Pagos",
+      s4Body:
+        "Cuando una sede cobra en línea, el pago lo procesa un proveedor de pagos (por ejemplo Wompi). CanchaYa no guarda los datos de tu tarjeta. Los reembolsos dependen de la política de la sede y del medio de pago.",
+      s5Title: "5. Equipos, partidos, torneos y mensajes",
+      s5Body:
+        "Puedes crear equipos, unirte a partidos abiertos, inscribirte en torneos y escribir a las sedes. No publiques contenido ilegal, ofensivo o que no te pertenezca, ni uses la plataforma para enviar spam.",
+      s6Title: "6. Uso aceptable",
+      s6Body:
+        "No intentes acceder a cuentas ajenas, saltarte los controles de seguridad, automatizar reservas ni afectar el funcionamiento del servicio. Podemos suspender cuentas que incumplan estos términos.",
+      s7Title: "7. Eliminar tu cuenta",
+      s7Body:
+        "Puedes eliminar tu cuenta cuando quieras desde la app (Perfil → Seguridad → Eliminar cuenta) o desde la página Eliminar cuenta de esta web. La Política de privacidad explica qué datos se borran y cuáles se conservan anonimizados.",
+      s8Title: "8. Responsabilidad",
+      s8Body:
+        "Hacemos lo posible para que el servicio esté disponible y sea correcto, pero puede haber interrupciones o errores. En la medida que lo permita la ley, CanchaYa no responde por lo que ocurra en las instalaciones de las sedes.",
+      s9Title: "9. Cambios a estos términos",
+      s9Body:
+        "Si cambiamos estos términos de forma relevante te avisaremos en la app o por correo antes de que entren en vigor.",
+      s10Title: "10. Ley aplicable",
+      s10Body:
+        "La ley aplicable y la jurisdicción se definirán en la revisión legal de este documento.",
+    },
+    privacy: {
+      kicker: "Legal",
+      title: "Política de privacidad",
+      intro:
+        "Aquí explicamos qué datos personales recoge CanchaYa, para qué los usamos, con quién los compartimos y cómo puedes borrarlos.",
+      s1Title: "1. Responsable",
+      s1Body:
+        "El responsable del tratamiento es CanchaYa. Los datos completos del responsable se añadirán en la versión revisada. Para cualquier consulta sobre tus datos escríbenos a {contact}.",
+      s2Title: "2. Qué datos recogemos",
+      s2Account:
+        "Cuenta: tu correo, tu nombre y, si quieres, tu número de celular. La contraseña se guarda solo como un hash; nadie puede leerla.",
+      s2Bookings:
+        "Reservas y pagos: la sede, la cancha, la fecha, el estado de la reserva y los importes. Los datos de la tarjeta los recibe directamente el proveedor de pagos; CanchaYa solo guarda la referencia y el estado del pago.",
+      s2Teams:
+        "Equipos, partidos y torneos: los equipos que creas o a los que te unes, los partidos abiertos y las inscripciones a eventos.",
+      s2Messages: "Mensajes: las conversaciones que mantienes con las sedes dentro de CanchaYa.",
+      s2Push:
+        "Notificaciones: si las aceptas en la app, el token push de tu dispositivo. Está ligado a tu sesión y se borra cuando cierras sesión.",
+      s2Security:
+        "Seguridad: tus sesiones activas y, si la activas, la configuración de la verificación en dos pasos.",
+      s2Errors:
+        "Errores técnicos: cuando algo falla registramos datos técnicos para arreglarlo. Los reportes de la app se envían sin tu sesión y con correos, teléfonos y tokens eliminados, de modo que no contienen datos personales.",
+      s2NoMore: "No vendemos tus datos personales.",
+      s3Title: "3. Para qué los usamos",
+      s3Body:
+        "Para crear y proteger tu cuenta, gestionar tus reservas y pagos, avisarte de cambios en tus reservas y partidos, permitir que las sedes te atiendan y corregir errores del servicio.",
+      s4Title: "4. Con quién los compartimos",
+      s4Body1:
+        "Con la sede donde reservas o a la que escribes: ve tu nombre, tu contacto y los datos de la reserva o de la conversación.",
+      s4Body2:
+        "Con proveedores que nos prestan servicios (alojamiento, envío de correos y notificaciones push, procesamiento de pagos), solo para prestar el servicio.",
+      s5Title: "5. Cuánto tiempo los guardamos",
+      s5Body:
+        "Mientras tu cuenta esté activa. Cuando la eliminas, borramos tus datos personales como se explica abajo. Las reservas y pagos se conservan anonimizados porque forman parte de la contabilidad de las sedes.",
+      s6Title: "6. Cómo eliminar tu cuenta",
+      s6Body1:
+        "En la app: Perfil → Seguridad → Eliminar cuenta. En la web: la página Eliminar cuenta. Te pediremos tu contraseña y, si tienes la verificación en dos pasos, un código.",
+      s6Body2:
+        "Se borran: tu correo, tu nombre, tu celular, tu contraseña, la verificación en dos pasos, tus sesiones y tokens push, tus roles, tus conversaciones con sedes, tus preferencias de partidos e invitaciones pendientes.",
+      s6Body3:
+        "Se conservan anonimizados (sin tu nombre ni contacto): las reservas, los pagos y las inscripciones pasadas, para la contabilidad de las sedes.",
+      s6Body4:
+        "Antes de eliminarla debes cancelar tus reservas futuras y, si eres parte del equipo de una sede, pedir que te quiten de ella.",
+      s7Title: "7. Tus derechos",
+      s7Body:
+        "Puedes ver y corregir tus datos desde tu perfil, eliminar tu cuenta en cualquier momento y escribirnos para pedir una copia de tus datos u oponerte a algún uso. La normativa de protección de datos aplicable se precisará en la revisión legal.",
+      s8Title: "8. Seguridad",
+      s8Body:
+        "Usamos conexiones cifradas, sesiones en cookies protegidas, contraseñas con hash y verificación en dos pasos opcional. Ningún sistema es infalible; si detectamos un incidente que te afecte, te avisaremos.",
+      s9Title: "9. Cambios",
+      s9Body: "Si cambiamos esta política de forma relevante te avisaremos en la app o por correo.",
+    },
+    deletion: {
+      kicker: "Cuenta",
+      title: "Eliminar tu cuenta",
+      intro:
+        "Puedes eliminar tu cuenta de CanchaYa y tus datos personales cuando quieras. Esta acción no se puede deshacer.",
+      appTitle: "Desde la app",
+      appStep1: "Abre CanchaYa e inicia sesión.",
+      appStep2: "Ve a Perfil → Seguridad.",
+      appStep3: "Toca Eliminar cuenta y confirma con tu contraseña (y tu código si tienes la verificación en dos pasos).",
+      whatTitle: "Qué pasa con tus datos",
+      whatDeleted:
+        "Se borran tu correo, nombre, celular, contraseña, verificación en dos pasos, sesiones, tokens push, roles, conversaciones con sedes y preferencias.",
+      whatKept:
+        "Las reservas, pagos e inscripciones pasadas se conservan anonimizados para la contabilidad de las sedes.",
+      requirements:
+        "Antes debes cancelar tus reservas futuras y, si eres parte del equipo de una sede, pedir que te quiten de ella.",
+      webTitle: "Desde la web",
+      signedOut: "Inicia sesión para eliminar tu cuenta desde aquí.",
+      signIn: "Iniciar sesión",
+      signedInAs: "Vas a eliminar la cuenta {email}.",
+      readOnly: "Estás en modo \"ver como\". Sal de ese modo para eliminar tu propia cuenta.",
+      passwordLabel: "Tu contraseña actual",
+      codeLabel: "Código de verificación en dos pasos",
+      codeOptionalLabel: "Código de verificación (solo si tienes la verificación en dos pasos)",
+      submit: "Eliminar mi cuenta",
+      confirmTitle: "¿Eliminar tu cuenta definitivamente?",
+      confirmDescription:
+        "Cerraremos todas tus sesiones y borraremos tus datos personales. No podrás recuperarla.",
+      confirmAction: "Sí, eliminar",
+      failed: "No se pudo eliminar la cuenta",
+      done: "Tu cuenta fue eliminada. Gracias por haber usado CanchaYa.",
+      contact: "¿No puedes entrar a tu cuenta? Escríbenos a {contact} desde el correo de la cuenta.",
+    },
   },
   errors: {
     title: "Algo se salió de la cancha",

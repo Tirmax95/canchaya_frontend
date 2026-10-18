@@ -10,7 +10,7 @@
     "build": "next build --turbopack",
     "start": "next start --port 3001",
     "lint": "eslint",
-    "test": "tsx --test src/domain/booking.test.ts src/domain/establishment.test.ts src/domain/events.test.ts src/domain/venue-occupancy.test.ts src/domain/reservation-inbox.test.ts src/domain/messaging.test.ts src/domain/news.test.ts src/domain/bracket.test.ts src/shared/lib/url.test.ts src/shared/lib/client-boundary.test.ts",
+    "test": "tsx --test src/domain/booking.test.ts src/domain/establishment.test.ts src/domain/events.test.ts src/domain/venue-occupancy.test.ts src/domain/reservation-inbox.test.ts src/domain/messaging.test.ts src/domain/news.test.ts src/domain/bracket.test.ts src/domain/account-deletion.test.ts src/shared/lib/url.test.ts src/shared/lib/client-boundary.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
